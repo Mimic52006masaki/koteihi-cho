@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { FixedCost } from "../types";
-import { fetchFixedCosts, createFixedCost, updateFixedCost, toggleFixedCost } from "../api/fixedCosts";
+import { fetchFixedCosts, createFixedCost, updateFixedCost, toggleFixedCost, deleteFixedCost } from "../api/fixedCosts";
 
 export function useFixedCosts() {
   const queryClient = useQueryClient();
@@ -26,11 +26,17 @@ export function useFixedCosts() {
     onSuccess: invalidate,
   });
 
+  const deleteMutation = useMutation<void, Error, number>({
+    mutationFn: deleteFixedCost,
+    onSuccess: invalidate,
+  });
+
   return {
     costs: query.data ?? [],
     isLoading: query.isLoading,
     addMutation,
     updateMutation,
     toggleMutation,
+    deleteMutation,
   };
 }

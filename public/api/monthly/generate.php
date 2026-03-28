@@ -5,10 +5,22 @@ require '../../../app/middleware/auth.php';
 $pdo = require '../../../app/config/database.php';
 $user_id = $_SESSION['user_id'];
 
+$data = json_decode(file_get_contents("php://input"), true) ?? [];
+$cycle_date = $data['cycle_date'] ?? null;
+
+if (!$cycle_date) {
+    echo json_encode([
+        "success" => false,
+        "data" => null,
+        "error" => "開始日を選択してください"
+    ]);
+    exit;
+}
+
 $pdo->beginTransaction();
 
 try {
-    
+
     // open月次があるか確認
     $stmt = $pdo->prepare("
         SELECT id FROM monthly_cycles
@@ -30,10 +42,10 @@ try {
 
     // 新規作成
     $stmt = $pdo->prepare("
-        INSERT INTO monthly_cycles(user_id, cycle_date, start_date)
-        VALUES (?, CURDATE(), CURDATE())
+        INSERT INTO monthly_cycles(user_id, cycle_date)
+        VALUES (?, ?)
     ");
-    $stmt->execute([$user_id]);
+    $stmt->execute([$user_id, $cycle_date]);
     $cycle_id = $pdo->lastInsertId();
 
     // 有効な固定費取得

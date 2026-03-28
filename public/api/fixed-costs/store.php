@@ -9,12 +9,25 @@ $data = json_decode(file_get_contents("php://input"), true) ?? [];
 
 $name = trim($data['name'] ?? '');
 $amount = (int)($data['default_amount'] ?? 0);
+$type = $data['type'] ?? 'payment';
+$default_account_id = isset($data['default_account_id']) ? (int)$data['default_account_id'] : null;
+$to_account_id = isset($data['to_account_id']) ? (int)$data['to_account_id'] : null;
 
-if (!$name || $amount <= 0) {
+$allowed_types = ['deposit', 'transfer', 'payment'];
+if (!$name || $amount <= 0 || !in_array($type, $allowed_types)) {
     echo json_encode([
         "success" => false,
         "data" => null,
-        "error" => "名前と金額を正しく入力してください"
+        "error" => "名前・金額・種別を正しく入力してください"
+    ]);
+    exit;
+}
+
+if ($type === 'transfer' && !$to_account_id) {
+    echo json_encode([
+        "success" => false,
+        "data" => null,
+        "error" => "振替の場合は振替先口座を選択してください"
     ]);
     exit;
 }
@@ -23,10 +36,10 @@ $pdo->beginTransaction();
 
 try {
     $stmt = $pdo->prepare("
-        INSERT INTO fixed_costs(user_id, name, default_amount)
-        VALUES (?, ?, ?)
+        INSERT INTO fixed_costs(user_id, name, type, default_amount, default_account_id, to_account_id)
+        VALUES (?, ?, ?, ?, ?, ?)
     ");
-    $stmt->execute([$user_id, $name, $amount]);
+    $stmt->execute([$user_id, $name, $type, $amount, $default_account_id, $to_account_id]);
     $fixed_cost_id = $pdo->lastInsertId();
 
     // 進行中の月次サイクルがあれば追加

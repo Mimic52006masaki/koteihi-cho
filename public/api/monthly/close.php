@@ -5,10 +5,22 @@ require '../../../app/middleware/auth.php';
 $pdo = require '../../../app/config/database.php';
 $user_id = $_SESSION['user_id'];
 
+$data = json_decode(file_get_contents("php://input"), true) ?? [];
+$close_date = $data['close_date'] ?? null;
+
+if (!$close_date) {
+    echo json_encode([
+        "success" => false,
+        "data" => null,
+        "error" => "締め日を選択してください"
+    ]);
+    exit;
+}
+
 try {
 
     $pdo->beginTransaction();
-    
+
     // ①open月次取得
     $stmt = $pdo->prepare("
         SELECT id
@@ -30,13 +42,13 @@ try {
         exit;
     }
 
-    // ②締め処理
+    // ②締め処理（close_date を記録）
     $stmt = $pdo->prepare("
         UPDATE monthly_cycles
-        SET status = 'closed'
+        SET status = 'closed', close_date = ?
         WHERE id = ?
     ");
-    $stmt->execute([$cycle['id']]);
+    $stmt->execute([$close_date, $cycle['id']]);
 
     $pdo->commit();
 

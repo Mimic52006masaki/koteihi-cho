@@ -3,9 +3,9 @@ import {
   fetchCurrentMonthly,
   generateMonthly,
   closeMonthly,
-  updateCycle,
   payFixedCost,
   unpayFixedCost,
+  deleteMonthly,
 } from "../api/monthly";
 
 export function useMonthly() {
@@ -14,6 +14,7 @@ export function useMonthly() {
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ["current-monthly"] });
     queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    queryClient.invalidateQueries({ queryKey: ["accounts"] });
   };
 
   const query = useQuery({
@@ -31,11 +32,6 @@ export function useMonthly() {
     onSuccess: invalidateAll,
   });
 
-  const updateCycleMutation = useMutation({
-    mutationFn: updateCycle,
-    onSuccess: invalidateAll,
-  });
-
   const payMutation = useMutation({
     mutationFn: payFixedCost,
     onSuccess: invalidateAll,
@@ -46,13 +42,20 @@ export function useMonthly() {
     onSuccess: invalidateAll,
   });
 
+  const deleteMutation = useMutation<void, Error, number>({
+    mutationFn: deleteMonthly,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["monthly-history"] });
+    },
+  });
+
   return {
     monthly: query.data,
     isSuccess: query.isSuccess,
     generateMutation,
     closeMutation,
-    updateCycleMutation,
     payMutation,
     unpayMutation,
+    deleteMutation,
   };
 }

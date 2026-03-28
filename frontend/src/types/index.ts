@@ -16,20 +16,48 @@ export type Account = {
   balance: number;
 };
 
+export type TransactionType = "deposit" | "transfer" | "payment";
+
 export type FixedCost = {
   id: number;
   name: string;
+  type: TransactionType;
   default_amount: number;
   is_active: boolean;
   default_account_id: number | null;
+  to_account_id: number | null;
 };
 
 export type MonthlyCycle = {
   id: number;
   cycle_date: string;
   status: "open" | "closed";
-  salary: number;
-  salary_account_id: number | null;
+};
+
+export type MonthlyCostItem = {
+  id: number;
+  name: string;
+  type: TransactionType;
+  amount: number;
+  default_account_id: number | null;
+  to_account_id: number | null;
+  to_account_name: string | null;
+  paid_amount: number | null;
+  paid_date: string | null;
+  account_name: string | null;
+  account_id: number | null;
+};
+
+export type SpotTransaction = {
+  id: number;
+  type: TransactionType;
+  account_id: number;
+  account_name: string;
+  to_account_id: number | null;
+  to_account_name: string | null;
+  amount: number;
+  memo: string | null;
+  transaction_date: string;
 };
 
 export type MonthlyFixedCost = {
@@ -57,12 +85,4 @@ export type TransferHistory = {
   to_account_name: string;
   amount: number;
   transferred_at: string;
-};
-
-export type SalaryLog = {
-  id: number;
-  user_id: number;
-  monthly_cycle_id: number;
-  amount: number;
-  received_at: string;
 };

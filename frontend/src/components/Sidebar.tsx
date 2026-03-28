@@ -7,7 +7,6 @@ const MENU_ITEMS = [
   { name: "今月固定費", path: "/monthly/current" },
   { name: "固定費管理", path: "/fixed-costs" },
   { name: "履歴", path: "/history" },
-  { name: "給料日フロー", path: "/payday" },
   { name: "分析", path: "/analytics" },
   { name: "設定", path: "/settings" },
 ];
