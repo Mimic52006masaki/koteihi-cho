@@ -30,6 +30,122 @@ const EXEC_LABELS: Record<TransactionType, string> = {
 // ---- 固定費の型 ----
 type Cost = MonthlyCostItem & { input_amount?: number };
 
+// ---- 振替シミュレーター ----
+function TransferSimulator({
+  accounts,
+  onTransfer,
+  isPending,
+}: {
+  accounts: Account[];
+  onTransfer: (data: { account_id: number; to_account_id: number; amount: number; transaction_date: string }) => void;
+  isPending: boolean;
+}) {
+  const [fromId, setFromId] = useState<number | "">("");
+  const [toId, setToId] = useState<number | "">("");
+  const [amount, setAmount] = useState(0);
+
+  const fromAccount = fromId !== "" ? accounts.find((a) => a.id === fromId) : null;
+  const toAccount = toId !== "" ? accounts.find((a) => a.id === toId) : null;
+  const showPreview = amount > 0 && (fromAccount || toAccount);
+  const simulatedFrom = fromAccount ? fromAccount.balance - amount : null;
+  const simulatedTo = toAccount ? toAccount.balance + amount : null;
+  const isOverdraft = simulatedFrom !== null && simulatedFrom < 0;
+  const canSubmit = fromId !== "" && toId !== "" && fromId !== toId && amount > 0;
+
+  const handleSubmit = () => {
+    onTransfer({
+      account_id: fromId as number,
+      to_account_id: toId as number,
+      amount,
+      transaction_date: today(),
+    });
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow p-5 space-y-4">
+      <div className="font-semibold text-gray-800">振替シミュレーター</div>
+
+      <div className="flex gap-3 flex-wrap items-end">
+        <div>
+          <label className="text-xs text-gray-500 block mb-1">振替元</label>
+          <select
+            value={fromId}
+            onChange={(e) => setFromId(e.target.value !== "" ? Number(e.target.value) : "")}
+            className="border px-3 py-2 rounded text-sm"
+          >
+            <option value="">口座を選択</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="text-gray-400 pb-2">→</div>
+
+        <div>
+          <label className="text-xs text-gray-500 block mb-1">振替先</label>
+          <select
+            value={toId}
+            onChange={(e) => setToId(e.target.value !== "" ? Number(e.target.value) : "")}
+            className="border px-3 py-2 rounded text-sm"
+          >
+            <option value="">口座を選択</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="text-xs text-gray-500 block mb-1">金額</label>
+          <AmountInput
+            value={amount}
+            onChange={setAmount}
+            className="border px-3 py-2 rounded text-sm w-32"
+          />
+        </div>
+      </div>
+
+      {showPreview && (
+        <div className="flex gap-6 bg-gray-50 rounded-lg p-4">
+          {fromAccount && simulatedFrom !== null && (
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-gray-700">{fromAccount.name}</div>
+              <div className="text-xs text-gray-400">現在: ¥{fromAccount.balance.toLocaleString()}</div>
+              <div className={`text-sm font-bold ${isOverdraft ? "text-red-600" : "text-gray-800"}`}>
+                → ¥{simulatedFrom.toLocaleString()}
+                {isOverdraft && <span className="ml-1 text-xs font-normal">残高不足</span>}
+              </div>
+            </div>
+          )}
+          {fromAccount && toAccount && (
+            <div className="border-l border-gray-200 self-stretch" />
+          )}
+          {toAccount && simulatedTo !== null && (
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-gray-700">{toAccount.name}</div>
+              <div className="text-xs text-gray-400">現在: ¥{toAccount.balance.toLocaleString()}</div>
+              <div className="text-sm font-bold text-green-600">
+                → ¥{simulatedTo.toLocaleString()}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="flex justify-end">
+        <button
+          onClick={handleSubmit}
+          disabled={!canSubmit || isPending}
+          className="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600 disabled:opacity-50"
+        >
+          振替実行
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ---- 実行モーダル ----
 function PayModal({
   cost,
@@ -439,6 +555,15 @@ export default function CurrentMonthly() {
           <span className="text-sm text-gray-500">開始日: {monthly.cycle_date}</span>
         )}
       </div>
+
+      {/* 振替シミュレーター */}
+      <TransferSimulator
+        accounts={accounts}
+        onTransfer={({ account_id, to_account_id, amount, transaction_date }) =>
+          spotMutation.mutate({ type: "transfer", account_id, to_account_id, amount, memo: "振替", transaction_date })
+        }
+        isPending={spotMutation.isPending}
+      />
 
       {/* タブ */}
       <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit">
