@@ -5,6 +5,7 @@ require '../../../app/middleware/auth.php';
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode([
         "success" => false,
+        "data" => null,
         "error" => "POST required"
     ]);
     exit;
@@ -15,23 +16,22 @@ $user_id = $_SESSION['user_id'];
 
 $data = json_decode(file_get_contents("php://input"), true);
 
-$salary = $data["salary"] ?? 0;
 $safety_margin = $data["safety_margin"] ?? 0;
-$bank_balance = $data["bank_balance"] ?? 0;
+// bank_balance は users テーブルから削除されたため、ここでは扱わない
 
 $stmt = $pdo->prepare("
     UPDATE users
-    SET salary = ?, safety_margin = ?, bank_balance = ?
+    SET safety_margin = ?
     WHERE id = ?
 ");
 
 $stmt->execute([
-    $salary,
     $safety_margin,
-    $bank_balance,
     $user_id
 ]);
 
 echo json_encode([
-    "success" => true
+    "success" => true,
+    "data" => null,
+    "error" => null
 ]);

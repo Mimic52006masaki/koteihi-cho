@@ -1,5 +1,7 @@
 <?php
-require '../../../app/middleware/cors.php';
+require '../cors.php';
+
+session_start();
 
 $pdo = require '../../../app/config/database.php';
 
@@ -20,16 +22,18 @@ if ($user && password_verify($password, $user['password'])) {
 
     echo json_encode([
         "success" => true,
-        "user" => [
+        "data" => [
             "id" => $user['id'],
             "name" => $user['name'],
             "email" => $user['email']
-        ]
+        ],
+        "error" => null
     ]);
     exit;
 }
 
 echo json_encode([
     "success" => false,
+    "data" => null,
     "error" => "メールアドレスまたはパスワードが違います"
 ]);

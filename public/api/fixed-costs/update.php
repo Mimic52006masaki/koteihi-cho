@@ -1,5 +1,5 @@
 <?php
-require '../../../app/middleware/cors.php';
+require '../cors.php';
 require '../../../app/middleware/auth.php';
 
 $pdo = require '../../../app/config/database.php';
@@ -14,6 +14,7 @@ $amount = (int)($data['default_amount'] ?? 0);
 if (!$id || !$name || $amount <= 0) {
     echo json_encode([
         "success" => false,
+        "data" => null,
         "error" => "不正なデータです"
     ]);
     exit;
@@ -27,4 +28,4 @@ $stmt = $pdo->prepare("
 
 $stmt->execute([$name, $amount, $id, $user_id]);
 
-echo json_encode(["success" => true]);
+echo json_encode(["success" => true, "data" => null, "error" => null]);

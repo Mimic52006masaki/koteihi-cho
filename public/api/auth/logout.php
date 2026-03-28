@@ -1,5 +1,5 @@
 <?php
-require '../../../app/middleware/cors.php';
+require '../cors.php';
 
 $_SESSION = [];
 
@@ -18,4 +18,4 @@ if (ini_get("session.use_cookies")) {
 
 session_destroy();
 
-echo json_encode(["success" => true]);
+echo json_encode(["success" => true, "data" => null, "error" => null]);

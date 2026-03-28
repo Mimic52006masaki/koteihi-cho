@@ -1,10 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { api } from "../api/client";
-
-type User = {
-  id: number;
-  name: string;
-};
+import type { User } from "../types";
 
 type AuthContextType = {
   user: User | null;
@@ -28,7 +24,7 @@ export const AuthProvider = ({ children }: Props) => {
         const res = await api.get("/auth/me.php");
 
         if (res.data.success) {
-          setUser(res.data.user);
+          setUser(res.data.data);
         } else {
           setUser(null)          
         }

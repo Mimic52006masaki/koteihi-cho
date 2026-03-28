@@ -1,5 +1,5 @@
 <?php
-require '../../../app/middleware/cors.php';
+require '../cors.php';
 require '../../../app/middleware/auth.php';
 
 $pdo = require '../../../app/config/database.php';
@@ -16,5 +16,6 @@ $stmt->execute([$user_id]);
 
 echo json_encode([
     "success" => true,
-    "data" => $stmt->fetchAll()
+    "data" => $stmt->fetchAll(),
+    "error" => null
 ]);

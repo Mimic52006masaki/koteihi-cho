@@ -1,5 +1,5 @@
 <?php
-require '../../../app/middleware/cors.php';
+require '../cors.php';
 require '../../../app/middleware/auth.php';
 
 $pdo = require '../../../app/config/database.php';
@@ -10,17 +10,18 @@ try {
     $stmt = $pdo->prepare("
         SELECT
             mc.id,
-            mc.start_date,
-            mc.end_date,
-            COALESCE(SUM(mf.amount), 0) AS total_planned,
-            COALESCE(SUM(mf.actual_amount), 0) AS total_actual
+            mc.cycle_date,
+            COALESCE(SUM(mf.amount),0) AS total_planned,
+            COALESCE(SUM(p.amount),0) AS total_actual
         FROM monthly_cycles mc
         LEFT JOIN monthly_fixed_costs mf
             ON mf.monthly_cycle_id = mc.id
+        LEFT JOIN payments p
+            ON p.monthly_fixed_cost_id = mf.id
         WHERE mc.user_id = ?
         AND mc.status = 'closed'
         GROUP BY mc.id
-        ORDER BY mc.start_date DESC
+        ORDER BY mc.cycle_date DESC
     ");
 
     $stmt->execute([$user_id]);
@@ -28,13 +29,15 @@ try {
 
     echo json_encode([
         "success" => true,
-        "data" => $histories
+        "data" => $histories,
+        "error" => null
     ]);
 
 } catch (Exception $e) {
-    
+
     echo json_encode([
         "success" => false,
+        "data" => null,
         "error" => "履歴の取得に失敗しました"
     ]);
 }

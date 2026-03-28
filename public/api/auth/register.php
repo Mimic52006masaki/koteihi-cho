@@ -1,5 +1,5 @@
 <?php
-require '../../../app/middleware/cors.php';
+require '../cors.php';
 
 $pdo = require '../../../app/config/database.php';
 
@@ -12,6 +12,7 @@ $password = $data['password'] ?? '';
 if (!$name || !$email || !$password) {
     echo json_encode([
         "success" => false,
+        "data" => null,
         "error" => "全ての項目を入力してください"
     ]);
     exit;
@@ -25,6 +26,7 @@ try {
     if ($stmt->fetch()) {
         echo json_encode([
             "success" => false,
+            "data" => null,
             "error" => "このメールアドレスは既に登録されています"
         ]);
         exit;
@@ -47,11 +49,14 @@ try {
     $_SESSION['user_name'] = $name;
 
     echo json_encode([
-        "success" => true
+        "success" => true,
+        "data" => null,
+        "error" => null
     ]);
 } catch (Exception $e) {
     echo json_encode([
         "success" => false,
+        "data" => null,
         "error" => "登録に失敗しました"
     ]);
 }

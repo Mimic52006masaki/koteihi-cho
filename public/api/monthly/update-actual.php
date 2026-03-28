@@ -1,5 +1,5 @@
 <?php
-require '../../../app/middleware/cors.php';
+require '../cors.php';
 require '../../../app/middleware/auth.php';
 
 $pdo = require '../../../app/config/database.php';
@@ -8,7 +8,16 @@ $user_id = $_SESSION['user_id'];
 $data = json_decode(file_get_contents("php://input"), true) ?? [];
 
 $id = (int)($data['id'] ?? 0);
-$actual = isset($data['actual_amount']) ? (int)$data['actual_amount'] : null;
+
+// actual_amount が存在し、null でない場合は整数に、それ以外は null に
+$actual = array_key_exists('actual_amount', $data)
+    ? ($data['actual_amount'] !== null ? (int)$data['actual_amount'] : null)
+    : null;
+
+// paid_date が存在すればその値を、なければ null に
+$paid_date = array_key_exists('paid_date', $data)
+    ? $data['paid_date']
+    : null;
 
 if (!$id) {
     echo json_encode([
@@ -44,10 +53,10 @@ try {
     // ②更新
     $stmt = $pdo->prepare("
         UPDATE monthly_fixed_costs
-        SET actual_amount = ?
+        SET actual_amount = ?, paid_date = ?
         WHERE id = ?
     ");
-    $stmt->execute([$actual, $id]);
+    $stmt->execute([$actual, $paid_date, $id]);
 
     echo json_encode(["success" => true]);
 } catch (Exception $e) {

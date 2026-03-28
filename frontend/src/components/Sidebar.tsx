@@ -1,22 +1,26 @@
+import { memo } from "react";
 import { Link, useLocation } from "react-router-dom";
 
-export default function Sidebar() {
-  const location = useLocation();
+const MENU_ITEMS = [
+  { name: "Dashboard", path: "/dashboard" },
+  { name: "口座管理", path: "/accounts" },
+  { name: "今月固定費", path: "/monthly/current" },
+  { name: "固定費管理", path: "/fixed-costs" },
+  { name: "履歴", path: "/history" },
+  { name: "給料日フロー", path: "/payday" },
+  { name: "分析", path: "/analytics" },
+  { name: "設定", path: "/settings" },
+];
 
-  const menu = [
-    { name: "Dashboard", path: "/dashboard" },
-    { name: "今月固定費", path: "/monthly/current" },
-    { name: "固定費管理", path: "/fixed-costs" },
-    { name: "履歴", path: "/history" },
-    { name: "設定", path: "/settings" },
-  ];
+function Sidebar() {
+  const location = useLocation();
 
   return (
     <aside className="w-64 bg-white border-r">
       <div className="p-6 font-bold text-xl border-b">固定費帳</div>
 
       <nav className="p-4 space-y-2">
-        {menu.map((item) => (
+        {MENU_ITEMS.map((item) => (
           <Link
             key={item.path}
             to={item.path}
@@ -34,3 +38,5 @@ export default function Sidebar() {
     </aside>
   );
 }
+
+export default memo(Sidebar);

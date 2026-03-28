@@ -1,5 +1,5 @@
 <?php
-require '../../../app/middleware/cors.php';
+require '../cors.php';
 require '../../../app/middleware/auth.php';
 
 $pdo = require '../../../app/config/database.php';
@@ -24,6 +24,7 @@ try {
         $pdo->rollBack();
         echo json_encode([
             "success" => false,
+            "data" => null,
             "error" => "進行中の月次がありません"
         ]);
         exit;
@@ -32,8 +33,7 @@ try {
     // ②締め処理
     $stmt = $pdo->prepare("
         UPDATE monthly_cycles
-        SET status = 'closed',
-            end_date = CURDATE()
+        SET status = 'closed'
         WHERE id = ?
     ");
     $stmt->execute([$cycle['id']]);
@@ -41,14 +41,17 @@ try {
     $pdo->commit();
 
     echo json_encode([
-        "success" => true
+        "success" => true,
+        "data" => null,
+        "error" => null
     ]);
 } catch (Exception $e) {
-    
+
     $pdo->rollBack();
 
     echo json_encode([
         "success" => false,
+        "data" => null,
         "error" => "月次の締め処理に失敗しました"
     ]);
 }
