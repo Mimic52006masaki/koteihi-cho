@@ -43,6 +43,7 @@ function TransferSimulator({
   const [fromId, setFromId] = useState<number | "">("");
   const [toId, setToId] = useState<number | "">("");
   const [amount, setAmount] = useState(0);
+  const [targetBalance, setTargetBalance] = useState<number | "">("");
 
   const fromAccount = fromId !== "" ? accounts.find((a) => a.id === fromId) : null;
   const toAccount = toId !== "" ? accounts.find((a) => a.id === toId) : null;
@@ -51,6 +52,26 @@ function TransferSimulator({
   const simulatedTo = toAccount ? toAccount.balance + amount : null;
   const isOverdraft = simulatedFrom !== null && simulatedFrom < 0;
   const canSubmit = fromId !== "" && toId !== "" && fromId !== toId && amount > 0;
+
+  const handleFromChange = (val: number | "") => {
+    setFromId(val);
+    setAmount(0);
+    setTargetBalance("");
+  };
+
+  const handleTargetBalanceChange = (val: number) => {
+    setTargetBalance(val);
+    if (fromAccount) {
+      setAmount(Math.max(0, fromAccount.balance - val));
+    }
+  };
+
+  const handleReset = () => {
+    setFromId("");
+    setToId("");
+    setAmount(0);
+    setTargetBalance("");
+  };
 
   const handleSubmit = () => {
     onTransfer({
@@ -70,7 +91,7 @@ function TransferSimulator({
           <label className="text-xs text-gray-500 block mb-1">振替元</label>
           <select
             value={fromId}
-            onChange={(e) => setFromId(e.target.value !== "" ? Number(e.target.value) : "")}
+            onChange={(e) => handleFromChange(e.target.value !== "" ? Number(e.target.value) : "")}
             className="border px-3 py-2 rounded text-sm"
           >
             <option value="">口座を選択</option>
@@ -95,13 +116,26 @@ function TransferSimulator({
             ))}
           </select>
         </div>
+      </div>
+
+      <div className="flex gap-3 flex-wrap items-end">
+        <div>
+          <label className="text-xs text-gray-500 block mb-1">残したい金額</label>
+          <AmountInput
+            value={targetBalance !== "" ? targetBalance : 0}
+            onChange={handleTargetBalanceChange}
+            className="border px-3 py-2 rounded text-sm w-36"
+          />
+        </div>
+
+        <div className="text-gray-400 pb-2 text-sm">→</div>
 
         <div>
-          <label className="text-xs text-gray-500 block mb-1">金額</label>
+          <label className="text-xs text-gray-500 block mb-1">移動する金額</label>
           <AmountInput
             value={amount}
             onChange={setAmount}
-            className="border px-3 py-2 rounded text-sm w-32"
+            className="border px-3 py-2 rounded text-sm w-36"
           />
         </div>
       </div>
@@ -133,7 +167,13 @@ function TransferSimulator({
         </div>
       )}
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={handleReset}
+          className="border px-4 py-2 rounded text-sm text-gray-600 hover:bg-gray-50"
+        >
+          リセット
+        </button>
         <button
           onClick={handleSubmit}
           disabled={!canSubmit || isPending}
@@ -464,6 +504,7 @@ export default function CurrentMonthly() {
   const [payModalCostId, setPayModalCostId] = useState<number | null>(null);
   const [showSpotModal, setShowSpotModal] = useState(false);
   const [tab, setTab] = useState<"unpaid" | "paid">("unpaid");
+  const [simulatorKey, setSimulatorKey] = useState(0);
 
   const { monthly, isSuccess, payMutation, unpayMutation } = useMonthly();
   const queryClient = useQueryClient();
@@ -475,11 +516,16 @@ export default function CurrentMonthly() {
 
   const spotMutation = useMutation({
     mutationFn: createSpotTransaction,
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["current-monthly"] });
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
-      setShowSpotModal(false);
-      toast.success("追加しました");
+      if (variables.type === "transfer") {
+        setSimulatorKey((k) => k + 1);
+        toast.success("振替しました");
+      } else {
+        setShowSpotModal(false);
+        toast.success("追加しました");
+      }
     },
     onError: () => toast.error("追加に失敗しました"),
   });
@@ -558,6 +604,7 @@ export default function CurrentMonthly() {
 
       {/* 振替シミュレーター */}
       <TransferSimulator
+        key={simulatorKey}
         accounts={accounts}
         onTransfer={({ account_id, to_account_id, amount, transaction_date }) =>
           spotMutation.mutate({ type: "transfer", account_id, to_account_id, amount, memo: "振替", transaction_date })
