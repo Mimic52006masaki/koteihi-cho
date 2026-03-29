@@ -14,6 +14,7 @@ type Stats = {
   total_balance: number;
   safety_margin: number;
   monthly_total: number;
+  total_fixed_costs: number;
   last_month_total: number;
   remaining_budget: number;
   fixed_count: number;
@@ -60,10 +61,10 @@ function Dashboard() {
   }
 
   const diff = stats.monthly_total - stats.last_month_total;
-  const usableMoney = stats.total_balance - stats.safety_margin;
+  const unpaidTotal = stats.total_fixed_costs - stats.monthly_total;
   const usageRate =
-    usableMoney > 0
-      ? Math.min(100, Math.round((stats.monthly_total / usableMoney) * 100))
+    stats.total_fixed_costs > 0
+      ? Math.min(100, Math.round((stats.monthly_total / stats.total_fixed_costs) * 100))
       : 0;
 
   return (
@@ -158,6 +159,10 @@ function Dashboard() {
             style={{ width: `${usageRate}%` }}
           />
         </div>
+        <div className="flex justify-between text-xs text-gray-400">
+          <span>実行済み ¥{stats.monthly_total.toLocaleString()}</span>
+          <span>合計 ¥{stats.total_fixed_costs.toLocaleString()}</span>
+        </div>
       </div>
 
       {/* メトリクスカード */}
@@ -169,7 +174,11 @@ function Dashboard() {
 
         <div className="bg-white p-5 rounded-xl shadow">
           <div className="text-sm text-gray-500">今月固定費</div>
-          <div className="text-2xl font-bold">¥{stats.monthly_total.toLocaleString()}</div>
+          <div className="text-2xl font-bold">¥{stats.total_fixed_costs.toLocaleString()}</div>
+          <div className="flex gap-3 mt-1 text-xs">
+            <span className="text-blue-500">支払済 ¥{stats.monthly_total.toLocaleString()}</span>
+            <span className="text-gray-400">未払 ¥{unpaidTotal.toLocaleString()}</span>
+          </div>
         </div>
 
         <div className="bg-white p-5 rounded-xl shadow">

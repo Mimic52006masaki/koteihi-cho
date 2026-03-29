@@ -35,7 +35,7 @@ $total_balance = (int)$account_balance['total_balance'];
 $usable_money = $total_balance - $safety_margin;
 
 // ----------------------------
-// 今月の固定費合計
+// 今月の固定費合計（実行済み）
 // ----------------------------
 $stmt = $pdo->prepare("
     SELECT COALESCE(SUM(p.amount), 0) AS monthly_total
@@ -48,6 +48,20 @@ $stmt = $pdo->prepare("
 $stmt->execute([$userId]);
 $cycle = $stmt->fetch(PDO::FETCH_ASSOC);
 $monthly_total = (int)($cycle['monthly_total'] ?? 0);
+
+// ----------------------------
+// 今月の固定費合計（予定額）
+// ----------------------------
+$stmt = $pdo->prepare("
+    SELECT COALESCE(SUM(mf.amount), 0) AS total_fixed_costs
+    FROM monthly_fixed_costs mf
+    JOIN monthly_cycles mc ON mc.id = mf.monthly_cycle_id
+    WHERE mc.user_id = ?
+    AND mc.status = 'open'
+");
+$stmt->execute([$userId]);
+$fixedRow = $stmt->fetch(PDO::FETCH_ASSOC);
+$total_fixed_costs = (int)($fixedRow['total_fixed_costs'] ?? 0);
 
 // ----------------------------
 // 先月の固定費合計
@@ -108,6 +122,7 @@ echo json_encode([
         "safety_margin" => $safety_margin,
         "total_balance" => $total_balance,
         "monthly_total" => $monthly_total,
+        "total_fixed_costs" => $total_fixed_costs,
         "last_month_total" => $last_month_total,
         "remaining_budget" => $remaining_budget,
         "fixed_count" => (int)$count,
