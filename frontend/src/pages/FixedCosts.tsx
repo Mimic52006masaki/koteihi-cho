@@ -83,218 +83,233 @@ export default function FixedCosts() {
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
         <div className="font-semibold">固定費追加</div>
 
-        <div className="flex gap-3 flex-wrap">
-          <input
-            type="text"
-            placeholder="名前"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="border px-3 py-2 rounded w-48"
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-500">名前</label>
+            <input
+              type="text"
+              placeholder="例：家賃"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="border px-3 py-2 rounded w-full"
+            />
+          </div>
 
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value as TransactionType)}
-            className="border px-3 py-2 rounded"
-          >
-            <option value="payment">支払い</option>
-            <option value="deposit">入金</option>
-            <option value="transfer">振替</option>
-          </select>
-
-          <AmountInput
-            value={amount}
-            onChange={setAmount}
-            placeholder="金額"
-            className="border px-3 py-2 rounded w-32"
-          />
-
-          <select
-            value={defaultAccountId}
-            onChange={(e) => setDefaultAccountId(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="border px-3 py-2 rounded"
-          >
-            <option value="">{type === "transfer" ? "振替元口座" : "口座（任意）"}</option>
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id}>{a.name}</option>
-            ))}
-          </select>
-
-          {type === "transfer" && (
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-500">種別</label>
             <select
-              value={toAccountId}
-              onChange={(e) => setToAccountId(e.target.value !== "" ? Number(e.target.value) : "")}
-              className="border px-3 py-2 rounded"
+              value={type}
+              onChange={(e) => setType(e.target.value as TransactionType)}
+              className="border px-3 py-2 rounded w-full"
             >
-              <option value="">振替先口座</option>
+              <option value="payment">支払い</option>
+              <option value="deposit">入金</option>
+              <option value="transfer">振替</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-500">金額</label>
+            <AmountInput
+              value={amount}
+              onChange={setAmount}
+              placeholder="金額"
+              className="border px-3 py-2 rounded w-full"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-500">{type === "transfer" ? "振替元口座" : "口座（任意）"}</label>
+            <select
+              value={defaultAccountId}
+              onChange={(e) => setDefaultAccountId(e.target.value !== "" ? Number(e.target.value) : "")}
+              className="border px-3 py-2 rounded w-full"
+            >
+              <option value="">選択してください</option>
               {accounts.map((a) => (
                 <option key={a.id} value={a.id}>{a.name}</option>
               ))}
             </select>
+          </div>
+
+          {type === "transfer" && (
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-gray-500">振替先口座</label>
+              <select
+                value={toAccountId}
+                onChange={(e) => setToAccountId(e.target.value !== "" ? Number(e.target.value) : "")}
+                className="border px-3 py-2 rounded w-full"
+              >
+                <option value="">選択してください</option>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
           )}
 
-          <button
-            onClick={handleAdd}
-            disabled={addMutation.isPending}
-            className="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50"
-          >
-            追加
-          </button>
+          <div className={`flex items-end ${type === "transfer" ? "" : "sm:col-span-2"}`}>
+            <button
+              onClick={handleAdd}
+              disabled={addMutation.isPending}
+              className="w-full bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50 hover:bg-blue-600 transition-colors"
+            >
+              追加
+            </button>
+          </div>
         </div>
       </div>
 
       {/* 固定費一覧 */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-        <div className="p-6 border-b font-semibold">固定費一覧</div>
+        <div className="px-6 py-4 border-b font-semibold">固定費一覧</div>
 
-        <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 text-xs text-gray-400 uppercase tracking-wide">
-            <tr>
-              <th className="p-4 text-left">名前</th>
-              <th className="p-4 text-left">種別</th>
-              <th className="p-4 text-left">金額</th>
-              <th className="p-4 text-left">口座</th>
-              <th className="p-4">状態</th>
-              <th className="p-4"></th>
-            </tr>
-          </thead>
+        <ul className="divide-y divide-gray-100">
+          {costs.length === 0 && (
+            <li className="px-6 py-8 text-center text-sm text-gray-400">
+              固定費が登録されていません
+            </li>
+          )}
 
-          <tbody>
-            {costs.map((c) => {
-              const editing = { ...c, ...localEdits[c.id] };
+          {costs.map((c) => {
+            const editing = { ...c, ...localEdits[c.id] };
+
+            if (editingId === c.id) {
               return (
-                <tr key={c.id} className="border-t hover:bg-gray-50 transition-colors">
-                  <td className="p-4">
-                    {editingId === c.id ? (
+                <li key={c.id} className="px-4 py-4 bg-gray-50">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-gray-500">名前</label>
                       <input
                         value={editing.name}
                         onChange={(e) => updateLocal(c.id, "name", e.target.value)}
-                        className="border px-2 py-1 rounded"
+                        className="border px-2 py-1.5 rounded text-sm w-full"
                       />
-                    ) : (
-                      c.name
-                    )}
-                  </td>
+                    </div>
 
-                  <td className="p-4">
-                    {editingId === c.id ? (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-gray-500">種別</label>
                       <select
                         value={editing.type}
                         onChange={(e) => updateLocal(c.id, "type", e.target.value as TransactionType)}
-                        className="border px-2 py-1 rounded text-sm"
+                        className="border px-2 py-1.5 rounded text-sm w-full"
                       >
                         <option value="payment">支払い</option>
                         <option value="deposit">入金</option>
                         <option value="transfer">振替</option>
                       </select>
-                    ) : (
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[c.type]}`}>
-                        {TYPE_LABELS[c.type]}
-                      </span>
-                    )}
-                  </td>
+                    </div>
 
-                  <td className="p-4">
-                    {editingId === c.id ? (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-gray-500">金額</label>
                       <AmountInput
                         value={editing.default_amount}
                         onChange={(v) => updateLocal(c.id, "default_amount", v)}
-                        className="border px-2 py-1 rounded w-24"
+                        className="border px-2 py-1.5 rounded text-sm w-full"
                       />
-                    ) : (
-                      <span className={c.type === "deposit" ? "text-green-600" : "text-red-600"}>
-                        {c.type === "deposit" ? "+" : "-"}¥{c.default_amount.toLocaleString()}
-                      </span>
-                    )}
-                  </td>
+                    </div>
 
-                  <td className="p-4 text-sm text-gray-600">
-                    {editingId === c.id ? (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-gray-500">{editing.type === "transfer" ? "振替元口座" : "口座（任意）"}</label>
+                      <select
+                        value={editing.default_account_id ?? ""}
+                        onChange={(e) => updateLocal(c.id, "default_account_id", e.target.value !== "" ? Number(e.target.value) : null)}
+                        className="border px-2 py-1.5 rounded text-sm w-full"
+                      >
+                        <option value="">選択してください</option>
+                        {accounts.map((a) => (
+                          <option key={a.id} value={a.id}>{a.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {editing.type === "transfer" && (
                       <div className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-500">振替先口座</label>
                         <select
-                          value={editing.default_account_id ?? ""}
-                          onChange={(e) => updateLocal(c.id, "default_account_id", e.target.value !== "" ? Number(e.target.value) : null)}
-                          className="border px-2 py-1 rounded text-sm"
+                          value={editing.to_account_id ?? ""}
+                          onChange={(e) => updateLocal(c.id, "to_account_id", e.target.value !== "" ? Number(e.target.value) : null)}
+                          className="border px-2 py-1.5 rounded text-sm w-full"
                         >
-                          <option value="">{editing.type === "transfer" ? "振替元口座" : "口座（任意）"}</option>
+                          <option value="">選択してください</option>
                           {accounts.map((a) => (
                             <option key={a.id} value={a.id}>{a.name}</option>
                           ))}
                         </select>
-                        {editing.type === "transfer" && (
-                          <select
-                            value={editing.to_account_id ?? ""}
-                            onChange={(e) => updateLocal(c.id, "to_account_id", e.target.value !== "" ? Number(e.target.value) : null)}
-                            className="border px-2 py-1 rounded text-sm"
-                          >
-                            <option value="">振替先口座</option>
-                            {accounts.map((a) => (
-                              <option key={a.id} value={a.id}>{a.name}</option>
-                            ))}
-                          </select>
-                        )}
                       </div>
-                    ) : (
-                      c.type === "transfer" ? (
-                        <>
-                          {accounts.find((a) => a.id === c.default_account_id)?.name ?? "未設定"}
-                          {" → "}
-                          {accounts.find((a) => a.id === c.to_account_id)?.name ?? "未設定"}
-                        </>
-                      ) : (
-                        accounts.find((a) => a.id === c.default_account_id)?.name ?? (
-                          <span className="text-gray-300">未設定</span>
-                        )
-                      )
                     )}
-                  </td>
 
-                  <td className="p-4 text-center">
+                    <div className={`flex items-end justify-end gap-2 ${editing.type === "transfer" ? "" : "sm:col-span-2"}`}>
+                      <button
+                        onClick={() => { setEditingId(null); setLocalEdits({}); }}
+                        className="px-3 py-1.5 rounded border text-sm text-gray-600 hover:bg-gray-100 transition-colors"
+                      >
+                        キャンセル
+                      </button>
+                      <button
+                        onClick={() => handleUpdate(c.id)}
+                        disabled={updateMutation.isPending}
+                        className="px-3 py-1.5 rounded bg-blue-500 text-white text-sm disabled:opacity-50 hover:bg-blue-600 transition-colors"
+                      >
+                        保存
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              );
+            }
+
+            const accountLabel = c.type === "transfer"
+              ? `${accounts.find((a) => a.id === c.default_account_id)?.name ?? "未設定"} → ${accounts.find((a) => a.id === c.to_account_id)?.name ?? "未設定"}`
+              : accounts.find((a) => a.id === c.default_account_id)?.name ?? null;
+
+            return (
+              <li key={c.id} className="px-4 py-3 flex flex-col gap-1.5 hover:bg-gray-50 transition-colors">
+                {/* 上段: バッジ + 名前 / 金額 */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[c.type]}`}>
+                      {TYPE_LABELS[c.type]}
+                    </span>
+                    <span className="font-semibold truncate">{c.name}</span>
+                  </div>
+                  <span className={`shrink-0 text-sm font-semibold ${c.type === "deposit" ? "text-green-600" : "text-red-600"}`}>
+                    {c.type === "deposit" ? "+" : "-"}¥{c.default_amount.toLocaleString()}
+                  </span>
+                </div>
+
+                {/* 下段: 口座 / 操作ボタン */}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-gray-400 truncate">
+                    {accountLabel ?? <span className="text-gray-300">口座未設定</span>}
+                  </span>
+                  <div className="flex items-center gap-3 shrink-0">
                     <button
                       onClick={() => toggleMutation.mutate(c.id)}
-                      className={`px-3 py-1 rounded text-sm ${
-                        c.is_active ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-600"
+                      className={`px-2.5 py-0.5 rounded text-xs ${
+                        c.is_active ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-500"
                       }`}
                     >
                       {c.is_active ? "有効" : "無効"}
                     </button>
-                  </td>
-
-                  <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-3">
-                      {editingId === c.id ? (
-                        <button
-                          onClick={() => handleUpdate(c.id)}
-                          disabled={updateMutation.isPending}
-                          className="text-blue-500 disabled:opacity-50"
-                        >
-                          保存
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => setEditingId(c.id)}
-                          className="text-gray-500"
-                        >
-                          編集
-                        </button>
-                      )}
-                      {editingId !== c.id && (
-                        <button
-                          onClick={() => setDeleteTargetId(c.id)}
-                          className="text-red-400 hover:text-red-600 text-sm"
-                        >
-                          削除
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        </div>
+                    <button
+                      onClick={() => setEditingId(c.id)}
+                      className="text-xs text-gray-500 hover:text-gray-700"
+                    >
+                      編集
+                    </button>
+                    <button
+                      onClick={() => setDeleteTargetId(c.id)}
+                      className="text-xs text-red-400 hover:text-red-600"
+                    >
+                      削除
+                    </button>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
       <ConfirmModal
