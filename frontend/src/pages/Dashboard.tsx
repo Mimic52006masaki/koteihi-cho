@@ -71,6 +71,7 @@ function Dashboard() {
 
   const diff = stats.monthly_total - stats.last_month_total;
   const unpaidTotal = stats.total_fixed_costs - stats.monthly_total;
+  const linkedRemaining = stats.account_summaries.reduce((sum, s) => sum + s.remaining, 0);
   const usageRate =
     stats.total_fixed_costs > 0
       ? Math.min(100, Math.round((stats.monthly_total / stats.total_fixed_costs) * 100))
@@ -80,7 +81,7 @@ function Dashboard() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Dashboard</h1>
 
-      {stats.remaining_budget < 0 && (
+      {linkedRemaining < 0 && (
         <div className="bg-red-100 border border-red-300 text-red-700 p-4 rounded-lg">
           ⚠️ 固定費が口座残高を超えています
         </div>
@@ -199,10 +200,10 @@ function Dashboard() {
           <div className="text-sm text-gray-500">残り予算</div>
           <div
             className={`text-2xl font-bold ${
-              stats.remaining_budget < 0 ? "text-red-500" : "text-green-600"
+              linkedRemaining < 0 ? "text-red-500" : "text-green-600"
             }`}
           >
-            ¥{stats.remaining_budget.toLocaleString()}
+            ¥{linkedRemaining.toLocaleString()}
           </div>
         </div>
 
