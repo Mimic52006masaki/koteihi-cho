@@ -1,9 +1,6 @@
-import { useState, useEffect } from "react";
-import AmountInput from "../components/AmountInput";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { fetchSettings, updateSettings } from "../api/settings";
-import type { SettingsData } from "../api/settings";
 import { useMonthly } from "../hooks/useMonthly";
 import { apiGet } from "../api/client";
 
@@ -31,29 +28,8 @@ type Stats = {
 };
 
 function Dashboard() {
-  const queryClient = useQueryClient();
-  const [safetyMargin, setSafetyMargin] = useState<number>(0);
   const [cycleDate, setCycleDate] = useState(today());
   const [closeDate, setCloseDate] = useState(today());
-
-  const { data: settings } = useQuery<SettingsData>({
-    queryKey: ["settings"],
-    queryFn: fetchSettings,
-  });
-
-  useEffect(() => {
-    if (settings) setSafetyMargin(Number(settings.safety_margin ?? 0));
-  }, [settings]);
-
-  const saveSettingsMutation = useMutation({
-    mutationFn: (margin: number) => updateSettings({ safety_margin: margin }),
-    onSuccess: () => {
-      toast.success("安全余剰を保存しました");
-      queryClient.invalidateQueries({ queryKey: ["settings"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
-    },
-    onError: () => toast.error("保存に失敗しました"),
-  });
 
   const { data: stats } = useQuery<Stats>({
     queryKey: ["dashboard-stats"],
@@ -191,12 +167,7 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl shadow">
-          <div className="text-sm text-gray-500">安全余剰</div>
-          <div className="text-2xl font-bold">¥{stats.safety_margin.toLocaleString()}</div>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl shadow">
+<div className="bg-white p-5 rounded-xl shadow">
           <div className="text-sm text-gray-500">残り予算</div>
           <div
             className={`text-2xl font-bold ${
@@ -241,26 +212,7 @@ function Dashboard() {
         </div>
       )}
 
-      {/* 安全余剰設定 */}
-      <div className="bg-white p-5 rounded-xl shadow space-y-3">
-        <div className="font-semibold text-sm">安全余剰設定</div>
-        <div className="flex items-center gap-3">
-          <AmountInput
-            value={safetyMargin}
-            onChange={setSafetyMargin}
-            placeholder="安全余剰額"
-          />
-          <button
-            onClick={() => saveSettingsMutation.mutate(safetyMargin)}
-            disabled={saveSettingsMutation.isPending}
-            className="bg-gray-500 text-white px-4 py-2 rounded text-sm disabled:opacity-50 whitespace-nowrap"
-          >
-            保存
-          </button>
-        </div>
-      </div>
-
-      {/* 最近の支払い */}
+{/* 最近の支払い */}
       <div className="bg-white rounded-xl shadow">
         <div className="p-5 border-b font-semibold">最近の支払い</div>
         <div className="divide-y">
