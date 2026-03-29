@@ -105,13 +105,14 @@ $stmt = $pdo->prepare("
         a.id AS account_id,
         a.name AS account_name,
         a.balance,
-        COALESCE(SUM(mf.amount), 0) AS planned_total
+        COALESCE(SUM(CASE WHEN p.id IS NULL THEN mf.amount ELSE 0 END), 0) AS unpaid_total
     FROM accounts a
     JOIN fixed_costs fc ON fc.default_account_id = a.id
         AND fc.user_id = ? AND fc.is_active = 1
     LEFT JOIN monthly_fixed_costs mf ON mf.fixed_cost_id = fc.id
     LEFT JOIN monthly_cycles mc ON mc.id = mf.monthly_cycle_id
         AND mc.user_id = ? AND mc.status = 'open'
+    LEFT JOIN payments p ON p.monthly_fixed_cost_id = mf.id
     WHERE a.user_id = ?
     GROUP BY a.id, a.name, a.balance
     ORDER BY a.name
@@ -120,13 +121,13 @@ $stmt->execute([$userId, $userId, $userId]);
 $accountRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $account_summaries = array_map(function($row) {
     $balance = (int)$row['balance'];
-    $planned = (int)$row['planned_total'];
+    $unpaid = (int)$row['unpaid_total'];
     return [
         'account_id'    => (int)$row['account_id'],
         'account_name'  => $row['account_name'],
         'balance'       => $balance,
-        'planned_total' => $planned,
-        'remaining'     => $balance - $planned,
+        'planned_total' => $unpaid,
+        'remaining'     => $balance - $unpaid,
     ];
 }, $accountRows);
 

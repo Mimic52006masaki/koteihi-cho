@@ -228,7 +228,7 @@ function Dashboard() {
                 <div>
                   <div className="font-medium">{s.account_name}</div>
                   <div className="text-xs text-gray-400 mt-0.5">
-                    残高 ¥{s.balance.toLocaleString()}　固定費 ¥{s.planned_total.toLocaleString()}
+                    残高 ¥{s.balance.toLocaleString()}　未払い固定費 ¥{s.planned_total.toLocaleString()}
                   </div>
                 </div>
                 <div className={`text-lg font-bold ${s.remaining < 0 ? "text-red-500" : "text-green-600"}`}>
