@@ -207,15 +207,42 @@ export default function FixedCosts() {
                   </td>
 
                   <td className="p-4 text-sm text-gray-600">
-                    {c.type === "transfer" ? (
-                      <>
-                        {accounts.find((a) => a.id === c.default_account_id)?.name ?? "未設定"}
-                        {" → "}
-                        {accounts.find((a) => a.id === c.to_account_id)?.name ?? "未設定"}
-                      </>
+                    {editingId === c.id ? (
+                      <div className="flex flex-col gap-1">
+                        <select
+                          value={editing.default_account_id ?? ""}
+                          onChange={(e) => updateLocal(c.id, "default_account_id", e.target.value !== "" ? Number(e.target.value) : null)}
+                          className="border px-2 py-1 rounded text-sm"
+                        >
+                          <option value="">{editing.type === "transfer" ? "振替元口座" : "口座（任意）"}</option>
+                          {accounts.map((a) => (
+                            <option key={a.id} value={a.id}>{a.name}</option>
+                          ))}
+                        </select>
+                        {editing.type === "transfer" && (
+                          <select
+                            value={editing.to_account_id ?? ""}
+                            onChange={(e) => updateLocal(c.id, "to_account_id", e.target.value !== "" ? Number(e.target.value) : null)}
+                            className="border px-2 py-1 rounded text-sm"
+                          >
+                            <option value="">振替先口座</option>
+                            {accounts.map((a) => (
+                              <option key={a.id} value={a.id}>{a.name}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
                     ) : (
-                      accounts.find((a) => a.id === c.default_account_id)?.name ?? (
-                        <span className="text-gray-300">未設定</span>
+                      c.type === "transfer" ? (
+                        <>
+                          {accounts.find((a) => a.id === c.default_account_id)?.name ?? "未設定"}
+                          {" → "}
+                          {accounts.find((a) => a.id === c.to_account_id)?.name ?? "未設定"}
+                        </>
+                      ) : (
+                        accounts.find((a) => a.id === c.default_account_id)?.name ?? (
+                          <span className="text-gray-300">未設定</span>
+                        )
                       )
                     )}
                   </td>
