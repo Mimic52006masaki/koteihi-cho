@@ -1,0 +1,25 @@
+# =============================================
+# XServer 本番環境変数（実際の値に書き換えてください）
+# =============================================
+SetEnv DB_HOST mysqlXXX.xserver.jp
+SetEnv DB_NAME XXXXXXXX_db
+SetEnv DB_USER XXXXXXXX_user
+SetEnv DB_PASS your_password_here
+SetEnv FRONTEND_ORIGIN https://animanbuzz.com
+SetEnv GOOGLE_CLIENT_ID 256680701541-arb6bj8irnrlht6snklsq8dbitar7i2t.apps.googleusercontent.com
+
+# =============================================
+# SPA ルーティング
+# =============================================
+RewriteEngine On
+
+# API リクエストはそのまま通す
+RewriteCond %{REQUEST_URI} ^/api/ [NC]
+RewriteRule ^ - [L]
+
+# 存在するファイル・ディレクトリはそのまま
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# それ以外は index.html へ（SPAルーティング）
+RewriteRule ^ /index.html [L]
