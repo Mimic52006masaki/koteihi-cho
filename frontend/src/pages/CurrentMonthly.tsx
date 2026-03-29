@@ -16,9 +16,9 @@ const TYPE_LABELS: Record<TransactionType, string> = {
 };
 
 const TYPE_COLORS: Record<TransactionType, string> = {
-  deposit: "bg-green-100 text-green-700",
-  transfer: "bg-blue-100 text-blue-700",
-  payment: "bg-orange-100 text-orange-700",
+  deposit: "bg-green-50 text-green-700",
+  transfer: "bg-purple-50 text-purple-700",
+  payment: "bg-red-50 text-red-700",
 };
 
 const EXEC_LABELS: Record<TransactionType, string> = {
@@ -99,7 +99,7 @@ function TransferSimulator({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow p-5 space-y-4">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
       <div className="font-semibold text-gray-800">振替シミュレーター</div>
 
       <div className="flex gap-3 flex-wrap items-end">
@@ -157,14 +157,14 @@ function TransferSimulator({
       </div>
 
       {costs.length > 0 && (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border border-gray-100 rounded-xl overflow-hidden">
           <div className="bg-gray-50 px-4 py-2 text-xs font-medium text-gray-500">固定費を選んで合計</div>
-          <ul className="divide-y max-h-48 overflow-y-auto">
+          <ul className="divide-y max-h-48 overflow-y-auto bg-white">
             {costs.map((c) => (
               <li
                 key={c.id}
                 onClick={() => toggleCost(c.id)}
-                className={`flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-gray-50 ${
+                className={`flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors ${
                   c.paid_amount !== null ? "opacity-40" : ""
                 }`}
               >
@@ -369,10 +369,10 @@ const CostCard = memo(function CostCard({
 
   if (isPaid) {
     return (
-      <div className="p-4 rounded-lg shadow bg-green-50 border border-green-200">
+      <div className="p-4 rounded-2xl shadow-sm bg-green-50 border border-green-100">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <span className={`px-2 py-0.5 rounded text-xs font-medium ${TYPE_COLORS[type]}`}>
+            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[type]}`}>
               {TYPE_LABELS[type]}
             </span>
             <span className="font-semibold">{cost.name}</span>
@@ -401,9 +401,9 @@ const CostCard = memo(function CostCard({
   }
 
   return (
-    <div className="p-4 rounded-lg shadow bg-white flex items-center justify-between">
+    <div className="p-4 rounded-2xl shadow-sm border border-gray-100 bg-white flex items-center justify-between hover:shadow-md transition-shadow">
       <div className="flex items-center gap-2">
-        <span className={`px-2 py-0.5 rounded text-xs font-medium ${TYPE_COLORS[type]}`}>
+        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[type]}`}>
           {TYPE_LABELS[type]}
         </span>
         <span className="font-semibold">{cost.name}</span>
@@ -720,7 +720,7 @@ export default function CurrentMonthly() {
       </div>
 
       {/* 臨時トランザクション */}
-      <div className="bg-white rounded-xl shadow">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
         <div className="p-4 border-b flex justify-between items-center">
           <span className="font-semibold">臨時トランザクション</span>
           <button
@@ -739,7 +739,7 @@ export default function CurrentMonthly() {
               <li key={s.id} className="p-4 flex justify-between items-center">
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${TYPE_COLORS[s.type]}`}>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[s.type]}`}>
                       {TYPE_LABELS[s.type]}
                     </span>
                     <span className="font-medium">{s.memo || "—"}</span>

@@ -11,30 +11,54 @@ const MENU_ITEMS = [
   { name: "設定", path: "/settings" },
 ];
 
-function Sidebar() {
+function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => void }) {
   const location = useLocation();
 
   return (
-    <aside className="w-64 bg-white border-r">
-      <div className="p-6 font-bold text-xl border-b">固定費帳</div>
+    <>
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={onClose}
+        />
+      )}
 
-      <nav className="p-4 space-y-2">
-        {MENU_ITEMS.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`block px-4 py-2 rounded-lg ${
+      <aside
+        className={[
+          "fixed inset-y-0 left-0 z-40 w-64 bg-gray-900 flex flex-col",
+          "transform transition-transform duration-200 ease-in-out",
+          "md:static md:translate-x-0 md:shrink-0",
+          open ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        ].join(" ")}
+      >
+        <div className="px-6 py-5 border-b border-gray-800">
+          <span className="text-white font-bold text-xl tracking-tight">固定費帳</span>
+        </div>
+
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          {MENU_ITEMS.map((item) => {
+            const isActive =
               location.pathname === item.path ||
-              location.pathname.startsWith(item.path + "/")
-                ? "bg-blue-500 text-white"
-                : "hover:bg-gray-100"
-            }`}
-          >
-            {item.name}
-          </Link>
-        ))}
-      </nav>
-    </aside>
+              location.pathname.startsWith(item.path + "/");
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={onClose}
+                className={[
+                  "flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors border-l-2",
+                  isActive
+                    ? "bg-gray-800 text-white border-blue-500"
+                    : "text-gray-400 hover:bg-gray-800 hover:text-white border-transparent",
+                ].join(" ")}
+              >
+                {item.name}
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
+    </>
   );
 }
 

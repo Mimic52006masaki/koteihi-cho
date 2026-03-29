@@ -13,9 +13,9 @@ const TYPE_LABELS: Record<TransactionType, string> = {
 };
 
 const TYPE_COLORS: Record<TransactionType, string> = {
-  deposit: "bg-green-100 text-green-700",
-  transfer: "bg-blue-100 text-blue-700",
-  payment: "bg-orange-100 text-orange-700",
+  deposit: "bg-green-50 text-green-700",
+  transfer: "bg-purple-50 text-purple-700",
+  payment: "bg-red-50 text-red-700",
 };
 
 export default function FixedCosts() {
@@ -80,7 +80,7 @@ export default function FixedCosts() {
       <h1 className="text-2xl font-bold">固定費管理</h1>
 
       {/* 追加フォーム */}
-      <div className="bg-white p-6 rounded-xl shadow space-y-4">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
         <div className="font-semibold">固定費追加</div>
 
         <div className="flex gap-3 flex-wrap">
@@ -144,11 +144,12 @@ export default function FixedCosts() {
       </div>
 
       {/* 固定費一覧 */}
-      <div className="bg-white rounded-xl shadow">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
         <div className="p-6 border-b font-semibold">固定費一覧</div>
 
+        <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50 text-sm text-gray-500">
+          <thead className="bg-gray-50 text-xs text-gray-400 uppercase tracking-wide">
             <tr>
               <th className="p-4 text-left">名前</th>
               <th className="p-4 text-left">種別</th>
@@ -163,7 +164,7 @@ export default function FixedCosts() {
             {costs.map((c) => {
               const editing = { ...c, ...localEdits[c.id] };
               return (
-                <tr key={c.id} className="border-t">
+                <tr key={c.id} className="border-t hover:bg-gray-50 transition-colors">
                   <td className="p-4">
                     {editingId === c.id ? (
                       <input
@@ -188,7 +189,7 @@ export default function FixedCosts() {
                         <option value="transfer">振替</option>
                       </select>
                     ) : (
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${TYPE_COLORS[c.type]}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[c.type]}`}>
                         {TYPE_LABELS[c.type]}
                       </span>
                     )}
@@ -293,6 +294,7 @@ export default function FixedCosts() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       <ConfirmModal

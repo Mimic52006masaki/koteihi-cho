@@ -64,7 +64,7 @@ function Dashboard() {
       )}
 
       {/* 月次ステータスバー */}
-      <div className="bg-white rounded-xl shadow p-4 space-y-3">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
         <div className="flex items-center gap-3 flex-wrap">
           {currentMonthly ? (
             <>
@@ -134,14 +134,14 @@ function Dashboard() {
       </div>
 
       {/* 固定費使用率 */}
-      <div className="bg-white p-5 rounded-xl shadow space-y-2">
+      <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-2">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-500">固定費使用率</span>
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">固定費使用率</span>
           <span className="font-semibold">{usageRate}%</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
+        <div className="w-full bg-gray-200 rounded-full h-2">
           <div
-            className="bg-blue-500 h-3 rounded-full transition-all duration-500"
+            className="bg-blue-600 h-2 rounded-full transition-all duration-500"
             style={{ width: `${usageRate}%` }}
           />
         </div>
@@ -153,24 +153,24 @@ function Dashboard() {
 
       {/* メトリクスカード */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-xl shadow">
-          <div className="text-sm text-gray-500">口座残高</div>
-          <div className="text-2xl font-bold">¥{stats.total_balance.toLocaleString()}</div>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">口座残高</div>
+          <div className="text-3xl font-bold tracking-tight mt-1">¥{stats.total_balance.toLocaleString()}</div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl shadow">
-          <div className="text-sm text-gray-500">今月固定費</div>
-          <div className="text-2xl font-bold">¥{stats.total_fixed_costs.toLocaleString()}</div>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">今月固定費</div>
+          <div className="text-3xl font-bold tracking-tight mt-1">¥{stats.total_fixed_costs.toLocaleString()}</div>
           <div className="flex gap-3 mt-1 text-xs">
             <span className="text-blue-500">支払済 ¥{stats.monthly_total.toLocaleString()}</span>
             <span className="text-gray-400">未払 ¥{unpaidTotal.toLocaleString()}</span>
           </div>
         </div>
 
-<div className="bg-white p-5 rounded-xl shadow">
-          <div className="text-sm text-gray-500">残り予算</div>
+<div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">残り予算</div>
           <div
-            className={`text-2xl font-bold ${
+            className={`text-3xl font-bold tracking-tight mt-1 ${
               linkedRemaining < 0 ? "text-red-500" : "text-green-600"
             }`}
           >
@@ -178,10 +178,10 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl shadow">
-          <div className="text-sm text-gray-500">先月との差</div>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">先月との差</div>
           <div
-            className={`text-2xl font-bold ${
+            className={`text-3xl font-bold tracking-tight mt-1 ${
               diff > 0 ? "text-red-500" : "text-green-500"
             }`}
           >
@@ -192,7 +192,7 @@ function Dashboard() {
 
       {/* 口座別 固定費残り予算 */}
       {stats.account_summaries.length > 0 && (
-        <div className="bg-white rounded-xl shadow">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
           <div className="p-5 border-b font-semibold text-sm">口座別 固定費残り予算</div>
           <div className="divide-y">
             {stats.account_summaries.map((s) => (
@@ -213,7 +213,7 @@ function Dashboard() {
       )}
 
 {/* 最近の支払い */}
-      <div className="bg-white rounded-xl shadow">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
         <div className="p-5 border-b font-semibold">最近の支払い</div>
         <div className="divide-y">
           {stats.recent.length === 0 && (
