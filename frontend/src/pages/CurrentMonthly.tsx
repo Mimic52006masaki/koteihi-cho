@@ -181,7 +181,9 @@ function TransferSimulator({
                     <span className="text-xs text-gray-400">支払済</span>
                   )}
                 </div>
-                <span className="text-sm text-gray-600">¥{c.amount.toLocaleString()}</span>
+                <span className={`text-sm ${c.type === "deposit" ? "text-green-600" : "text-red-600"}`}>
+                  {c.type === "deposit" ? "+" : "-"}¥{c.amount.toLocaleString()}
+                </span>
               </li>
             ))}
           </ul>
@@ -388,7 +390,9 @@ const CostCard = memo(function CostCard({
         </div>
         <div className="text-sm text-gray-500 mt-2 flex gap-4">
           <span>{cost.paid_date ?? "N/A"}</span>
-          <span>¥{Number(cost.paid_amount).toLocaleString()}</span>
+          <span className={type === "deposit" ? "text-green-600" : "text-red-600"}>
+            {type === "deposit" ? "+" : "-"}¥{Number(cost.paid_amount).toLocaleString()}
+          </span>
           {type !== "deposit" && cost.account_name && <span>{cost.account_name}</span>}
           {type === "transfer" && cost.to_account_name && <span>→ {cost.to_account_name}</span>}
         </div>
@@ -406,7 +410,9 @@ const CostCard = memo(function CostCard({
       </div>
       <div className="flex items-center gap-4">
         <span className="text-gray-400 text-sm">{today()}</span>
-        <span className="text-gray-500 text-sm">¥{cost.amount.toLocaleString()}</span>
+        <span className={`text-sm ${type === "deposit" ? "text-green-600" : "text-red-600"}`}>
+          {type === "deposit" ? "+" : "-"}¥{cost.amount.toLocaleString()}
+        </span>
         <button
           onClick={() => onOpenModal(cost.id)}
           className="bg-blue-500 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-600"

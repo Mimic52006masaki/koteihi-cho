@@ -202,7 +202,9 @@ export default function FixedCosts() {
                         className="border px-2 py-1 rounded w-24"
                       />
                     ) : (
-                      `¥${c.default_amount.toLocaleString()}`
+                      <span className={c.type === "deposit" ? "text-green-600" : "text-red-600"}>
+                        {c.type === "deposit" ? "+" : "-"}¥{c.default_amount.toLocaleString()}
+                      </span>
                     )}
                   </td>
 

@@ -42,8 +42,10 @@ $stmt = $pdo->prepare("
     FROM payments p
     JOIN monthly_fixed_costs mf ON mf.id = p.monthly_fixed_cost_id
     JOIN monthly_cycles mc ON mc.id = mf.monthly_cycle_id
+    JOIN fixed_costs fc ON fc.id = mf.fixed_cost_id
     WHERE mc.user_id = ?
     AND mc.status = 'open'
+    AND fc.type != 'deposit'
 ");
 $stmt->execute([$userId]);
 $cycle = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -56,8 +58,10 @@ $stmt = $pdo->prepare("
     SELECT COALESCE(SUM(mf.amount), 0) AS total_fixed_costs
     FROM monthly_fixed_costs mf
     JOIN monthly_cycles mc ON mc.id = mf.monthly_cycle_id
+    JOIN fixed_costs fc ON fc.id = mf.fixed_cost_id
     WHERE mc.user_id = ?
     AND mc.status = 'open'
+    AND fc.type != 'deposit'
 ");
 $stmt->execute([$userId]);
 $fixedRow = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -105,7 +109,7 @@ $stmt = $pdo->prepare("
         a.id AS account_id,
         a.name AS account_name,
         a.balance,
-        COALESCE(SUM(CASE WHEN p.id IS NULL THEN mf.amount ELSE 0 END), 0) AS unpaid_total
+        COALESCE(SUM(CASE WHEN p.id IS NULL AND fc.type != 'deposit' THEN mf.amount ELSE 0 END), 0) AS unpaid_total
     FROM accounts a
     JOIN fixed_costs fc ON fc.default_account_id = a.id
         AND fc.user_id = ? AND fc.is_active = 1
