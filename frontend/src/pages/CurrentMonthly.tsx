@@ -102,13 +102,13 @@ function TransferSimulator({
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
       <div className="font-semibold text-gray-800">振替シミュレーター</div>
 
-      <div className="flex gap-3 flex-wrap items-end">
-        <div>
-          <label className="text-xs text-gray-500 block mb-1">振替元</label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-gray-500">振替元</label>
           <select
             value={fromId}
             onChange={(e) => handleFromChange(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="border px-3 py-2 rounded text-sm"
+            className="border px-3 py-2 rounded text-sm w-full"
           >
             <option value="">口座を選択</option>
             {accounts.map((a) => (
@@ -117,14 +117,12 @@ function TransferSimulator({
           </select>
         </div>
 
-        <div className="text-gray-400 pb-2">→</div>
-
-        <div>
-          <label className="text-xs text-gray-500 block mb-1">振替先</label>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-gray-500">振替先</label>
           <select
             value={toId}
             onChange={(e) => setToId(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="border px-3 py-2 rounded text-sm"
+            className="border px-3 py-2 rounded text-sm w-full"
           >
             <option value="">口座を選択</option>
             {accounts.map((a) => (
@@ -134,24 +132,22 @@ function TransferSimulator({
         </div>
       </div>
 
-      <div className="flex gap-3 flex-wrap items-end">
-        <div>
-          <label className="text-xs text-gray-500 block mb-1">残したい金額</label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-gray-500">残したい金額</label>
           <AmountInput
             value={targetBalance !== "" ? targetBalance : 0}
             onChange={handleTargetBalanceChange}
-            className="border px-3 py-2 rounded text-sm w-36"
+            className="border px-3 py-2 rounded text-sm w-full"
           />
         </div>
 
-        <div className="text-gray-400 pb-2 text-sm">→</div>
-
-        <div>
-          <label className="text-xs text-gray-500 block mb-1">移動する金額</label>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-gray-500">移動する金額</label>
           <AmountInput
             value={amount}
             onChange={setAmount}
-            className="border px-3 py-2 rounded text-sm w-36"
+            className="border px-3 py-2 rounded text-sm w-full"
           />
         </div>
       </div>
@@ -204,7 +200,7 @@ function TransferSimulator({
       )}
 
       {showPreview && (
-        <div className="flex gap-6 bg-gray-50 rounded-lg p-4">
+        <div className="flex flex-wrap gap-4 bg-gray-50 rounded-lg p-4">
           {fromAccount && simulatedFrom !== null && (
             <div className="space-y-1">
               <div className="text-sm font-medium text-gray-700">{fromAccount.name}</div>
@@ -370,14 +366,14 @@ const CostCard = memo(function CostCard({
   if (isPaid) {
     return (
       <div className="p-4 rounded-2xl shadow-sm bg-green-50 border border-green-100">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[type]}`}>
+        <div className="flex items-start justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[type]}`}>
               {TYPE_LABELS[type]}
             </span>
-            <span className="font-semibold">{cost.name}</span>
+            <span className="font-semibold truncate">{cost.name}</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <span className="text-green-700 font-bold text-sm">✔ 実行済み</span>
             <button
               onClick={() => onUnpay(cost.id)}
@@ -388,7 +384,7 @@ const CostCard = memo(function CostCard({
             </button>
           </div>
         </div>
-        <div className="text-sm text-gray-500 mt-2 flex gap-4">
+        <div className="text-sm text-gray-500 mt-2 flex flex-wrap gap-2 sm:gap-4">
           <span>{cost.paid_date ?? "N/A"}</span>
           <span className={type === "deposit" ? "text-green-600" : "text-red-600"}>
             {type === "deposit" ? "+" : "-"}¥{Number(cost.paid_amount).toLocaleString()}
@@ -401,16 +397,16 @@ const CostCard = memo(function CostCard({
   }
 
   return (
-    <div className="p-4 rounded-2xl shadow-sm border border-gray-100 bg-white flex items-center justify-between hover:shadow-md transition-shadow">
-      <div className="flex items-center gap-2">
-        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[type]}`}>
+    <div className="p-4 rounded-2xl shadow-sm border border-gray-100 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 hover:shadow-md transition-shadow">
+      <div className="flex items-center gap-2 min-w-0">
+        <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[type]}`}>
           {TYPE_LABELS[type]}
         </span>
-        <span className="font-semibold">{cost.name}</span>
+        <span className="font-semibold truncate">{cost.name}</span>
       </div>
-      <div className="flex items-center gap-4">
-        <span className="text-gray-400 text-sm">{today()}</span>
-        <span className={`text-sm ${type === "deposit" ? "text-green-600" : "text-red-600"}`}>
+      <div className="flex items-center justify-end sm:justify-start gap-3 shrink-0">
+        <span className="hidden sm:inline text-gray-400 text-sm">{today()}</span>
+        <span className={`text-sm font-semibold ${type === "deposit" ? "text-green-600" : "text-red-600"}`}>
           {type === "deposit" ? "+" : "-"}¥{cost.amount.toLocaleString()}
         </span>
         <button
@@ -737,14 +733,14 @@ export default function CurrentMonthly() {
           <ul className="divide-y">
             {(monthly?.spots ?? []).map((s: SpotTransaction) => (
               <li key={s.id} className="p-4 flex justify-between items-center">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[s.type]}`}>
+                <div className="space-y-0.5 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[s.type]}`}>
                       {TYPE_LABELS[s.type]}
                     </span>
-                    <span className="font-medium">{s.memo || "—"}</span>
+                    <span className="font-medium truncate">{s.memo || "—"}</span>
                   </div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-gray-500 truncate">
                     {s.account_name}
                     {s.type === "transfer" && s.to_account_name ? ` → ${s.to_account_name}` : ""}
                     　{s.transaction_date}
