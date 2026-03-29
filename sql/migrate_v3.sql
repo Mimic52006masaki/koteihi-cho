@@ -9,10 +9,10 @@ ALTER TABLE fixed_costs
   ADD CONSTRAINT fk_fixed_costs_to_account
     FOREIGN KEY (to_account_id) REFERENCES accounts(id) ON DELETE SET NULL;
 
--- 2. account_histories の type に 'deposit' を追加
---    (migrate_v2.sql で作成済みの場合のみ)
+-- 2. account_histories に type カラムを追加
+--    schema.sql から新規作成した場合は ADD COLUMN、migrate_v2.sql 経由の場合は MODIFY COLUMN
 ALTER TABLE account_histories
-  MODIFY COLUMN type ENUM('payment', 'transfer', 'salary', 'deposit') NOT NULL DEFAULT 'payment';
+  ADD COLUMN IF NOT EXISTS type ENUM('payment', 'transfer', 'salary', 'deposit') NOT NULL DEFAULT 'payment';
 
 -- 3. monthly_cycles に締め日を追加
 ALTER TABLE monthly_cycles
