@@ -153,6 +153,7 @@ export default function FixedCosts() {
               <th className="p-4 text-left">名前</th>
               <th className="p-4 text-left">種別</th>
               <th className="p-4 text-left">金額</th>
+              <th className="p-4 text-left">口座</th>
               <th className="p-4">状態</th>
               <th className="p-4"></th>
             </tr>
@@ -202,6 +203,20 @@ export default function FixedCosts() {
                       />
                     ) : (
                       `¥${c.default_amount.toLocaleString()}`
+                    )}
+                  </td>
+
+                  <td className="p-4 text-sm text-gray-600">
+                    {c.type === "transfer" ? (
+                      <>
+                        {accounts.find((a) => a.id === c.default_account_id)?.name ?? "未設定"}
+                        {" → "}
+                        {accounts.find((a) => a.id === c.to_account_id)?.name ?? "未設定"}
+                      </>
+                    ) : (
+                      accounts.find((a) => a.id === c.default_account_id)?.name ?? (
+                        <span className="text-gray-300">未設定</span>
+                      )
                     )}
                   </td>
 

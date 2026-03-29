@@ -9,6 +9,14 @@ import { apiGet } from "../api/client";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+type AccountSummary = {
+  account_id: number;
+  account_name: string;
+  balance: number;
+  planned_total: number;
+  remaining: number;
+};
+
 type Stats = {
   salary: number;
   total_balance: number;
@@ -19,6 +27,7 @@ type Stats = {
   remaining_budget: number;
   fixed_count: number;
   recent: { id: number; name: string; amount: number }[];
+  account_summaries: AccountSummary[];
 };
 
 function Dashboard() {
@@ -208,6 +217,28 @@ function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* 口座別 固定費残り予算 */}
+      {stats.account_summaries.length > 0 && (
+        <div className="bg-white rounded-xl shadow">
+          <div className="p-5 border-b font-semibold text-sm">口座別 固定費残り予算</div>
+          <div className="divide-y">
+            {stats.account_summaries.map((s) => (
+              <div key={s.account_id} className="p-5 flex justify-between items-center">
+                <div>
+                  <div className="font-medium">{s.account_name}</div>
+                  <div className="text-xs text-gray-400 mt-0.5">
+                    残高 ¥{s.balance.toLocaleString()}　固定費 ¥{s.planned_total.toLocaleString()}
+                  </div>
+                </div>
+                <div className={`text-lg font-bold ${s.remaining < 0 ? "text-red-500" : "text-green-600"}`}>
+                  ¥{s.remaining.toLocaleString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 安全余剰設定 */}
       <div className="bg-white p-5 rounded-xl shadow space-y-3">

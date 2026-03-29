@@ -98,6 +98,39 @@ $stmt->execute([$userId]);
 $count = $stmt->fetchColumn();
 
 // ----------------------------
+// 口座別 固定費残り予算
+// ----------------------------
+$stmt = $pdo->prepare("
+    SELECT
+        a.id AS account_id,
+        a.name AS account_name,
+        a.balance,
+        COALESCE(SUM(mf.amount), 0) AS planned_total
+    FROM accounts a
+    JOIN fixed_costs fc ON fc.default_account_id = a.id
+        AND fc.user_id = ? AND fc.is_active = 1
+    LEFT JOIN monthly_fixed_costs mf ON mf.fixed_cost_id = fc.id
+    LEFT JOIN monthly_cycles mc ON mc.id = mf.monthly_cycle_id
+        AND mc.user_id = ? AND mc.status = 'open'
+    WHERE a.user_id = ?
+    GROUP BY a.id, a.name, a.balance
+    ORDER BY a.name
+");
+$stmt->execute([$userId, $userId, $userId]);
+$accountRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$account_summaries = array_map(function($row) {
+    $balance = (int)$row['balance'];
+    $planned = (int)$row['planned_total'];
+    return [
+        'account_id'    => (int)$row['account_id'],
+        'account_name'  => $row['account_name'],
+        'balance'       => $balance,
+        'planned_total' => $planned,
+        'remaining'     => $balance - $planned,
+    ];
+}, $accountRows);
+
+// ----------------------------
 // 最近の支払い
 // ----------------------------
 $stmt = $pdo->prepare("
@@ -126,6 +159,7 @@ echo json_encode([
         "last_month_total" => $last_month_total,
         "remaining_budget" => $remaining_budget,
         "fixed_count" => (int)$count,
-        "recent" => $recent
+        "recent" => $recent,
+        "account_summaries" => $account_summaries
     ]
 ]);
