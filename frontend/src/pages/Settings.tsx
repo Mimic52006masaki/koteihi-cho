@@ -31,14 +31,8 @@ export default function Settings() {
           {accounts.map((a) => (
             <div key={a.id} className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    a.type === "asset"
-                      ? "bg-blue-100 text-blue-700"
-                      : "bg-orange-100 text-orange-700"
-                  }`}
-                >
-                  {a.type === "asset" ? "資産" : "支払"}
+                <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-100 text-blue-700">
+                  口座
                 </span>
                 <span>{a.name}</span>
               </div>
