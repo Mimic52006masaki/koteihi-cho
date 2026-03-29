@@ -8,7 +8,8 @@ session_set_cookie_params([
 
 session_start();
 
-header("Access-Control-Allow-Origin: http://localhost:5173");
+$origin = getenv('FRONTEND_ORIGIN') ?: 'http://localhost:5173';
+header("Access-Control-Allow-Origin: $origin");
 header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");

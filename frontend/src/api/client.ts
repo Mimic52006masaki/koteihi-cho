@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import type { ApiResponse } from "../types";
 
 export const api = axios.create({
-    baseURL: "/koteihi-cho/public/api",
+    baseURL: import.meta.env.VITE_API_BASE_URL ?? "/koteihi-cho/public/api",
     withCredentials: true,
 });
 
