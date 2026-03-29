@@ -5,13 +5,10 @@ import type { Account } from "../types";
 import ConfirmModal from "../components/ConfirmModal";
 import { useAccounts } from "../hooks/useAccounts";
 
-type AccountType = "asset" | "payment";
-
 export const Accounts: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [formName, setFormName] = useState("");
-  const [formType, setFormType] = useState<AccountType>("asset");
   const [formBalance, setFormBalance] = useState<number>(0);
   const [confirmId, setConfirmId] = useState<number | null>(null);
 
@@ -39,19 +36,17 @@ export const Accounts: React.FC = () => {
     if (account) {
       setEditingAccount(account);
       setFormName(account.name);
-      setFormType(account.type);
       setFormBalance(account.balance);
     } else {
       setEditingAccount(null);
       setFormName("");
-      setFormType("asset");
       setFormBalance(0);
     }
     setModalOpen(true);
   };
 
   const handleSave = () => {
-    const payload = { name: formName, type: formType, balance: formBalance };
+    const payload = { name: formName, type: "asset" as const, balance: formBalance };
     if (editingAccount) {
       wrappedSave.mutate({ ...payload, id: editingAccount.id });
     } else {
@@ -66,102 +61,103 @@ export const Accounts: React.FC = () => {
     }
   };
 
+  if (isLoading) return <div className="p-6">Loading...</div>;
+
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">口座管理</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">口座管理</h1>
+        <button
+          onClick={() => openModal()}
+          className="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600"
+        >
+          + 新規口座
+        </button>
+      </div>
 
-      <button
-        className="bg-blue-500 text-white px-4 py-2 rounded mb-4"
-        onClick={() => openModal()}
-      >
-        新規口座作成
-      </button>
-
-      {isLoading ? (
-        <p>読み込み中...</p>
-      ) : (
-        <table className="w-full border">
-          <thead>
+      <div className="bg-white rounded-xl shadow">
+        <table className="w-full">
+          <thead className="bg-gray-50 text-sm text-gray-500">
             <tr>
-              <th className="border px-2 py-1">ID</th>
-              <th className="border px-2 py-1">口座名</th>
-              <th className="border px-2 py-1">タイプ</th>
-              <th className="border px-2 py-1">残高</th>
-              <th className="border px-2 py-1">操作</th>
+              <th className="p-4 text-left">口座名</th>
+              <th className="p-4 text-right">残高</th>
+              <th className="p-4"></th>
             </tr>
           </thead>
           <tbody>
+            {accounts.length === 0 && (
+              <tr>
+                <td colSpan={3} className="p-6 text-center text-gray-400 text-sm">
+                  口座が登録されていません
+                </td>
+              </tr>
+            )}
             {accounts.map((acc) => (
-              <tr key={acc.id}>
-                <td className="border px-2 py-1">{acc.id}</td>
-                <td className="border px-2 py-1">{acc.name}</td>
-                <td className="border px-2 py-1">{acc.type}</td>
-                <td className="border px-2 py-1">¥{acc.balance.toLocaleString()}</td>
-                <td className="border px-2 py-1">
-                  <button
-                    className="text-blue-500 mr-2"
-                    onClick={() => openModal(acc)}
-                  >
-                    編集
-                  </button>
-                  <button
-                    className="text-red-500"
-                    onClick={() => setConfirmId(acc.id)}
-                  >
-                    削除
-                  </button>
+              <tr key={acc.id} className="border-t">
+                <td className="p-4 font-medium">{acc.name}</td>
+                <td className="p-4 text-right font-semibold">
+                  ¥{acc.balance.toLocaleString()}
+                </td>
+                <td className="p-4 text-right">
+                  <div className="flex items-center justify-end gap-3">
+                    <button
+                      onClick={() => openModal(acc)}
+                      className="text-gray-500 text-sm hover:text-gray-700"
+                    >
+                      編集
+                    </button>
+                    <button
+                      onClick={() => setConfirmId(acc.id)}
+                      className="text-red-400 text-sm hover:text-red-600"
+                    >
+                      削除
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-      )}
+      </div>
 
       {modalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-          <div className="bg-white p-4 rounded w-96">
-            <h2 className="text-lg font-bold mb-2">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm space-y-4">
+            <h2 className="font-bold text-lg">
               {editingAccount ? "口座編集" : "新規口座作成"}
             </h2>
-            <div className="mb-2">
-              <label className="block mb-1">口座名</label>
+
+            <div>
+              <label className="text-sm font-medium">口座名</label>
               <input
                 type="text"
-                className="border w-full px-2 py-1"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
+                className="border px-3 py-2 rounded w-full mt-1"
+                placeholder="例：生活費口座"
               />
             </div>
-            <div className="mb-2">
-              <label className="block mb-1">タイプ</label>
-              <select
-                className="border w-full px-2 py-1"
-                value={formType}
-                onChange={(e) => setFormType(e.target.value as AccountType)}
-              >
-                <option value="asset">資産口座</option>
-                <option value="payment">支払口座</option>
-              </select>
-            </div>
-            <div className="mb-4">
-              <label className="block mb-1">残高</label>
+
+            <div>
+              <label className="text-sm font-medium">残高</label>
               <AmountInput
                 value={formBalance}
                 onChange={setFormBalance}
-                className="border w-full px-2 py-1"
+                className="border px-3 py-2 rounded w-full mt-1"
               />
             </div>
-            <div className="flex justify-end gap-2">
+
+            <div className="flex justify-end gap-2 pt-1">
               <button
-                className="px-4 py-2 bg-gray-300 rounded"
                 onClick={() => setModalOpen(false)}
+                className="px-4 py-2 rounded border text-gray-600"
               >
                 キャンセル
               </button>
               <button
-                className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
                 onClick={handleSave}
                 disabled={wrappedSave.isPending}
+                className="px-4 py-2 rounded bg-blue-500 text-white disabled:opacity-50"
               >
                 保存
               </button>

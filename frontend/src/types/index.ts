@@ -12,7 +12,6 @@ export type User = {
 export type Account = {
   id: number;
   name: string;
-  type: "asset" | "payment";
   balance: number;
 };
 
