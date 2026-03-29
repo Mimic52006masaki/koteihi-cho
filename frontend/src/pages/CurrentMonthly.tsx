@@ -33,10 +33,12 @@ type Cost = MonthlyCostItem & { input_amount?: number };
 // ---- 振替シミュレーター ----
 function TransferSimulator({
   accounts,
+  costs,
   onTransfer,
   isPending,
 }: {
   accounts: Account[];
+  costs: MonthlyCostItem[];
   onTransfer: (data: { account_id: number; to_account_id: number; amount: number; transaction_date: string }) => void;
   isPending: boolean;
 }) {
@@ -44,6 +46,7 @@ function TransferSimulator({
   const [toId, setToId] = useState<number | "">("");
   const [amount, setAmount] = useState(0);
   const [targetBalance, setTargetBalance] = useState<number | "">("");
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const fromAccount = fromId !== "" ? accounts.find((a) => a.id === fromId) : null;
   const toAccount = toId !== "" ? accounts.find((a) => a.id === toId) : null;
@@ -52,6 +55,18 @@ function TransferSimulator({
   const simulatedTo = toAccount ? toAccount.balance + amount : null;
   const isOverdraft = simulatedFrom !== null && simulatedFrom < 0;
   const canSubmit = fromId !== "" && toId !== "" && fromId !== toId && amount > 0;
+
+  const selectedTotal = costs
+    .filter((c) => selectedIds.has(c.id))
+    .reduce((sum, c) => sum + c.amount, 0);
+
+  const toggleCost = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
   const handleFromChange = (val: number | "") => {
     setFromId(val);
@@ -71,6 +86,7 @@ function TransferSimulator({
     setToId("");
     setAmount(0);
     setTargetBalance("");
+    setSelectedIds(new Set());
   };
 
   const handleSubmit = () => {
@@ -139,6 +155,51 @@ function TransferSimulator({
           />
         </div>
       </div>
+
+      {costs.length > 0 && (
+        <div className="border rounded-lg overflow-hidden">
+          <div className="bg-gray-50 px-4 py-2 text-xs font-medium text-gray-500">固定費を選んで合計</div>
+          <ul className="divide-y max-h-48 overflow-y-auto">
+            {costs.map((c) => (
+              <li
+                key={c.id}
+                onClick={() => toggleCost(c.id)}
+                className={`flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-gray-50 ${
+                  c.paid_amount !== null ? "opacity-40" : ""
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(c.id)}
+                    onChange={() => toggleCost(c.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="cursor-pointer"
+                  />
+                  <span className="text-sm">{c.name}</span>
+                  {c.paid_amount !== null && (
+                    <span className="text-xs text-gray-400">支払済</span>
+                  )}
+                </div>
+                <span className="text-sm text-gray-600">¥{c.amount.toLocaleString()}</span>
+              </li>
+            ))}
+          </ul>
+          {selectedIds.size > 0 && (
+            <div className="flex items-center justify-between px-4 py-2 bg-blue-50 border-t">
+              <span className="text-sm font-medium text-blue-700">
+                選択合計: ¥{selectedTotal.toLocaleString()}
+              </span>
+              <button
+                onClick={() => { setAmount(selectedTotal); setTargetBalance(""); }}
+                className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+              >
+                移動金額に設定
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {showPreview && (
         <div className="flex gap-6 bg-gray-50 rounded-lg p-4">
@@ -606,6 +667,7 @@ export default function CurrentMonthly() {
       <TransferSimulator
         key={simulatorKey}
         accounts={accounts}
+        costs={allCosts}
         onTransfer={({ account_id, to_account_id, amount, transaction_date }) =>
           spotMutation.mutate({ type: "transfer", account_id, to_account_id, amount, memo: "振替", transaction_date })
         }
