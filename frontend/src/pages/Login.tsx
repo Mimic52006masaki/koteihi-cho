@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api/client";
 
@@ -31,26 +30,6 @@ function Login() {
         await afterLogin();
       } else {
         setError(res.data.error || "ログイン失敗");
-      }
-    } catch {
-      setError("サーバーエラーが発生しました");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
-    setError("");
-    setLoading(true);
-    try {
-      const res = await api.post("/auth/google.php", {
-        credential: credentialResponse.credential,
-      });
-
-      if (res.data.success) {
-        await afterLogin();
-      } else {
-        setError(res.data.error || "Google ログイン失敗");
       }
     } catch {
       setError("サーバーエラーが発生しました");
@@ -102,20 +81,6 @@ function Login() {
           {loading ? "ログイン中..." : "ログイン"}
         </button>
 
-        <div className="flex items-center my-4">
-          <hr className="flex-1 border-gray-300" />
-          <span className="mx-3 text-sm text-gray-400">または</span>
-          <hr className="flex-1 border-gray-300" />
-        </div>
-
-        <div className="flex justify-center">
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => setError("Google ログインに失敗しました")}
-            useOneTap={false}
-            text="signin_with"
-          />
-        </div>
       </form>
     </div>
   );
