@@ -5,7 +5,7 @@ SetEnv DB_HOST mysqlXXX.xserver.jp
 SetEnv DB_NAME XXXXXXXX_db
 SetEnv DB_USER XXXXXXXX_user
 SetEnv DB_PASS your_password_here
-SetEnv FRONTEND_ORIGIN https://animanbuzz.com
+SetEnv FRONTEND_ORIGIN https://koteihi.animanbuzz.com
 SetEnv GOOGLE_CLIENT_ID 256680701541-arb6bj8irnrlht6snklsq8dbitar7i2t.apps.googleusercontent.com
 
 # =============================================
