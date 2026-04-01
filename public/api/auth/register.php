@@ -1,6 +1,8 @@
 <?php
 require '../cors.php';
 
+session_start();
+
 $pdo = require '../../../app/config/database.php';
 
 $data = json_decode(file_get_contents("php://input"), true) ?? [];
