@@ -41,3 +41,11 @@ export const deleteFixedCost = async (id: number): Promise<void> => {
   const res = await apiPost<unknown>("/fixed-costs/delete.php", { id });
   if (!res.success) throw new Error(res.error ?? "削除に失敗しました");
 };
+
+// 画面に出ている順の monthly_fixed_costs.id を送る。
+// 並び順そのものは固定費マスタ側に保存されるので、翌月以降も引き継がれる。
+export const reorderFixedCosts = async (
+  ids: number[]
+): Promise<ApiResponse<{ count: number }>> => {
+  return apiPost<{ count: number }>("/fixed-costs/reorder.php", { ids });
+};

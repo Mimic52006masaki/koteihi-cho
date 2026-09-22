@@ -31,6 +31,34 @@ rsync -a --delete --exclude='.htaccess' "$ROOT/frontend/dist/" "$ROOT/public_htm
 BUNDLE_JS=$(basename "$(ls "$ROOT"/public_html/assets/*.js | head -1)")
 echo "  bundle: $BUNDLE_JS"
 
+# 配備するコードが要求するDBスキーマが本番に入っているか先に確かめる。
+# 先にファイルだけ置くと、列が無いまま新しいSQLが走って画面が500になる。
+echo "▶ DBスキーマの前提を確認"
+MISSING=$(ssh "$REMOTE" 'D=~/animanbuzz.com/public_html/koteihi.animanbuzz.com
+H=$(awk "\$1==\"SetEnv\"&&\$2==\"DB_HOST\"{print \$3}" $D/.htaccess)
+N=$(awk "\$1==\"SetEnv\"&&\$2==\"DB_NAME\"{print \$3}" $D/.htaccess)
+U=$(awk "\$1==\"SetEnv\"&&\$2==\"DB_USER\"{print \$3}" $D/.htaccess)
+export MYSQL_PWD=$(awk "\$1==\"SetEnv\"&&\$2==\"DB_PASS\"{print \$3}" $D/.htaccess)
+mysql -h"$H" -u"$U" -N -e "
+  SELECT \"fixed_costs.sort_order\" FROM DUAL WHERE NOT EXISTS (
+    SELECT 1 FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=\"fixed_costs\" AND COLUMN_NAME=\"sort_order\");
+  SELECT \"import_records\" FROM DUAL WHERE NOT EXISTS (
+    SELECT 1 FROM information_schema.TABLES
+    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=\"import_records\");
+" "$N"')
+
+if [ -n "$MISSING" ]; then
+  echo "" >&2
+  echo "✗ 本番DBに次が足りないため配備を中止した：" >&2
+  echo "$MISSING" | sed 's/^/    /' >&2
+  echo "" >&2
+  echo "  先にマイグレーションを適用すること：" >&2
+  echo "    bash bin/apply-migration.sh sql/migrate_v5_sort_order.sql" >&2
+  exit 1
+fi
+echo "  OK"
+
 echo "▶ 本番をバックアップ"
 ssh "$REMOTE" 'mkdir -p ~/backups && chmod 700 ~/backups
 TS=$(date +%Y%m%d-%H%M%S)

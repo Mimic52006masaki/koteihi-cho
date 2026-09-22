@@ -52,7 +52,9 @@ $stmt = $pdo->prepare("
 
     ORDER BY
         p.paid_date IS NULL ASC,
-        p.paid_date ASC
+        p.paid_date ASC,
+        fc.sort_order ASC,
+        fc.id ASC
 ");
 $stmt->execute([$monthly_cycle_id]);
 $items = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];

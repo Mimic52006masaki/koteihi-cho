@@ -1,3 +1,23 @@
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { reorderFixedCosts } from "../api/fixedCosts";
+import { applyUnpaidOrder } from "../lib/reorderCosts";
 import { useState, useCallback, memo } from "react";
 import AmountInput from "../components/AmountInput";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -562,6 +582,57 @@ function SpotModal({
   );
 }
 
+// ---- 並べ替え用のラッパー ----
+// ドラッグの起点はハンドルだけにする。カード本体には金額・日付の入力があり、
+// 全体をドラッグ可能にすると入力操作と取り合いになるため。
+function SortableCostCard({
+  cost,
+  onOpenModal,
+  onUnpay,
+  unpayPending,
+}: {
+  cost: Cost;
+  onOpenModal: (id: number) => void;
+  onUnpay: (id: number) => void;
+  unpayPending: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
+    useSortable({ id: cost.id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`flex items-start gap-2 ${isDragging ? "opacity-60 z-10 relative" : ""}`}
+    >
+      <button
+        ref={setActivatorNodeRef}
+        {...attributes}
+        {...listeners}
+        type="button"
+        aria-label={`${cost.name} の並び順を変更`}
+        // touch-none がないとモバイルでスクロールに取られてドラッグが始まらない
+        className="mt-4 shrink-0 px-2 py-1 rounded text-gray-300 hover:text-gray-500 hover:bg-gray-100 cursor-grab active:cursor-grabbing touch-none"
+      >
+        <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <circle cx="7" cy="5" r="1.5" /><circle cx="13" cy="5" r="1.5" />
+          <circle cx="7" cy="10" r="1.5" /><circle cx="13" cy="10" r="1.5" />
+          <circle cx="7" cy="15" r="1.5" /><circle cx="13" cy="15" r="1.5" />
+        </svg>
+      </button>
+
+      <div className="flex-1 min-w-0">
+        <CostCard
+          cost={cost}
+          onOpenModal={onOpenModal}
+          onUnpay={onUnpay}
+          unpayPending={unpayPending}
+        />
+      </div>
+    </div>
+  );
+}
+
 // ---- メインページ ----
 export default function CurrentMonthly() {
   const [payModalCostId, setPayModalCostId] = useState<number | null>(null);
@@ -603,6 +674,25 @@ export default function CurrentMonthly() {
     onError: () => toast.error("削除に失敗しました"),
   });
 
+  // 少し動かしてからドラッグ開始。すぐ反応すると支払いボタンのタップを奪ってしまう
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const reorderMutation = useMutation({
+    mutationFn: reorderFixedCosts,
+    onError: () => {
+      // 楽観更新を捨ててサーバーの並びに戻す
+      queryClient.invalidateQueries({ queryKey: ["current-monthly"] });
+      toast.error("並べ替えに失敗しました");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["current-monthly"] });
+    },
+  });
+
   const allCosts: Cost[] = (monthly?.items ?? []).map((c) => ({ ...c }));
   const unpaidCosts = allCosts.filter((c) => c.paid_amount === null);
   const paidCosts = allCosts.filter((c) => c.paid_amount !== null);
@@ -639,6 +729,25 @@ export default function CurrentMonthly() {
       }
     );
   }, [payMutation]);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const ids = unpaidCosts.map((c) => c.id);
+    const from = ids.indexOf(Number(active.id));
+    const to = ids.indexOf(Number(over.id));
+    if (from === -1 || to === -1) return;
+
+    const nextIds = arrayMove(ids, from, to);
+
+    // 表示を先に動かす。未払いの枠だけ入れ替え、実行済みの位置はそのまま残す
+    queryClient.setQueryData(["current-monthly"], (prev: typeof monthly) =>
+      prev ? { ...prev, items: applyUnpaidOrder(prev.items, nextIds) } : prev
+    );
+
+    reorderMutation.mutate(nextIds);
+  };
 
   const handleUnpay = useCallback((id: number) => {
     unpayMutation.mutate(id, { onError: () => toast.error("処理に失敗しました") });
@@ -703,15 +812,40 @@ export default function CurrentMonthly() {
             {tab === "unpaid" ? "未払いの固定費はありません" : "実行済みの固定費はありません"}
           </div>
         ) : (
-          visibleCosts.map((c) => (
-            <CostCard
-              key={c.id}
-              cost={c}
-              onOpenModal={setPayModalCostId}
-              onUnpay={handleUnpay}
-              unpayPending={unpayMutation.isPending}
-            />
-          ))
+          tab === "unpaid" ? (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={unpaidCosts.map((c) => c.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-3">
+                  {unpaidCosts.map((c) => (
+                    <SortableCostCard
+                      key={c.id}
+                      cost={c}
+                      onOpenModal={setPayModalCostId}
+                      onUnpay={handleUnpay}
+                      unpayPending={unpayMutation.isPending}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          ) : (
+            visibleCosts.map((c) => (
+              <CostCard
+                key={c.id}
+                cost={c}
+                onOpenModal={setPayModalCostId}
+                onUnpay={handleUnpay}
+                unpayPending={unpayMutation.isPending}
+              />
+            ))
+          )
         )}
       </div>
 

@@ -35,11 +35,16 @@ if ($type === 'transfer' && !$to_account_id) {
 $pdo->beginTransaction();
 
 try {
+    // 並べ替え済みの一覧に割り込まないよう、新規は末尾に置く
+    $stmt = $pdo->prepare("SELECT COALESCE(MAX(sort_order), 0) + 1 AS next FROM fixed_costs WHERE user_id = ?");
+    $stmt->execute([$user_id]);
+    $sort_order = (int)$stmt->fetch(PDO::FETCH_ASSOC)['next'];
+
     $stmt = $pdo->prepare("
-        INSERT INTO fixed_costs(user_id, name, type, default_amount, default_account_id, to_account_id)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO fixed_costs(user_id, name, type, default_amount, default_account_id, to_account_id, sort_order)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     ");
-    $stmt->execute([$user_id, $name, $type, $amount, $default_account_id, $to_account_id]);
+    $stmt->execute([$user_id, $name, $type, $amount, $default_account_id, $to_account_id, $sort_order]);
     $fixed_cost_id = $pdo->lastInsertId();
 
     // 進行中の月次サイクルがあれば追加
@@ -64,5 +69,6 @@ try {
 
 } catch (Exception $e) {
     $pdo->rollBack();
-    echo json_encode(["success" => false, "data" => null, "error" => $e->getMessage()]);
+    error_log('[koteihi] fixed-cost store failed: ' . $e->getMessage());
+    echo json_encode(["success" => false, "data" => null, "error" => "固定費の追加に失敗しました"], JSON_UNESCAPED_UNICODE);
 }
