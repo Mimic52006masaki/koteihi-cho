@@ -1,7 +1,5 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-};
+require_once __DIR__ . '/../bootstrap/http.php';
 
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
@@ -11,4 +9,3 @@ if (!isset($_SESSION['user_id'])) {
     ]);
     exit;
 }
-

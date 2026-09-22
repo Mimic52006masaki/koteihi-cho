@@ -2,6 +2,15 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api/client";
+import { GoogleLogin } from "@react-oauth/google";
+
+const googleEnabled = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
+
+// サーバーが返したメッセージを優先し、無ければ既定文言にする
+const messageFrom = (err: unknown, fallback: string) => {
+  const res = (err as { response?: { data?: { error?: string } } })?.response;
+  return res?.data?.error || fallback;
+};
 
 function Login() {
   const navigate = useNavigate();
@@ -31,8 +40,32 @@ function Login() {
       } else {
         setError(res.data.error || "ログイン失敗");
       }
-    } catch {
-      setError("サーバーエラーが発生しました");
+    } catch (err) {
+      // 認証失敗は 401 で返るため、サーバーのメッセージを拾う
+      setError(messageFrom(err, "サーバーエラーが発生しました"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogle = async (credential?: string) => {
+    if (!credential) {
+      setError("Googleログインに失敗しました");
+      return;
+    }
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await api.post("/auth/google.php", { credential });
+
+      if (res.data.success) {
+        await afterLogin();
+      } else {
+        setError(res.data.error || "Googleログインに失敗しました");
+      }
+    } catch (err) {
+      setError(messageFrom(err, "Googleログインに失敗しました"));
     } finally {
       setLoading(false);
     }
@@ -80,6 +113,24 @@ function Login() {
         >
           {loading ? "ログイン中..." : "ログイン"}
         </button>
+
+        {googleEnabled && (
+          <>
+            <div className="flex items-center gap-3 my-6">
+              <span className="h-px flex-1 bg-gray-200" />
+              <span className="text-xs text-gray-400">または</span>
+              <span className="h-px flex-1 bg-gray-200" />
+            </div>
+
+            <div className="flex justify-center">
+              <GoogleLogin
+                onSuccess={(res) => handleGoogle(res.credential)}
+                onError={() => setError("Googleログインに失敗しました")}
+                useOneTap={false}
+              />
+            </div>
+          </>
+        )}
 
       </form>
     </div>

@@ -16,9 +16,13 @@ import ImportReview from "./pages/ImportReview";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+
+// 未設定ならGoogleログインを出さない（Providerもマウントしない）
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
 function App() {
-  return (
+  const tree = (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -49,6 +53,10 @@ function App() {
       </BrowserRouter>
     </AuthProvider>
   );
+
+  return googleClientId
+    ? <GoogleOAuthProvider clientId={googleClientId}>{tree}</GoogleOAuthProvider>
+    : tree;
 }
 
 export default App;

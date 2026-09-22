@@ -1,8 +1,6 @@
 <?php
 require '../cors.php';
 
-session_start();
-
 $pdo = require '../../../app/config/database.php';
 
 $data = json_decode(file_get_contents("php://input"), true) ?? [];
@@ -10,11 +8,13 @@ $data = json_decode(file_get_contents("php://input"), true) ?? [];
 $email = $data['email'] ?? '';
 $password = $data['password'] ?? '';
 
-$stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+$stmt = $pdo->prepare("SELECT id, name, email, password FROM users WHERE email = ?");
 $stmt->execute([$email]);
 $user = $stmt->fetch();
 
-if ($user && password_verify($password, $user['password'])) {
+// Googleのみのユーザーは password が NULL になりうるので、先に存在を確かめる
+if ($user && is_string($user['password']) && $user['password'] !== ''
+    && password_verify($password, $user['password'])) {
     session_regenerate_id(true);
 
     $_SESSION['user_id'] = $user['id'];
@@ -32,8 +32,9 @@ if ($user && password_verify($password, $user['password'])) {
     exit;
 }
 
+http_response_code(401);
 echo json_encode([
     "success" => false,
     "data" => null,
     "error" => "メールアドレスまたはパスワードが違います"
-]);
+], JSON_UNESCAPED_UNICODE);
