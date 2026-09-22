@@ -12,8 +12,11 @@ try {
     if (!is_array($input)) throw new InvalidArgumentException('入力はJSON配列です');
     // Configure DB_* in the server environment; never pass credentials in argv.
     if (!getenv('DB_NAME') || !getenv('DB_USER')) throw new RuntimeException('DB_NAMEとDB_USERを保護された環境設定で明示してください');
+    // database.php は同じスコープで $options を再定義するため、先に控える
+    $userId = (int)$options['user'];
+    $commit = $options['commit'] ?? null;
     $pdo = require __DIR__ . '/../app/config/database.php';
-    $result = (new ImportService($pdo))->process((int)$options['user'], $input, $options['commit'] ?? null);
+    $result = (new ImportService($pdo))->process($userId, $input, $commit);
     echo ImportService::json($result), PHP_EOL;
 } catch (Throwable $e) {
     fwrite(STDERR, '取込失敗: ' . $e->getMessage() . PHP_EOL); exit(1);
