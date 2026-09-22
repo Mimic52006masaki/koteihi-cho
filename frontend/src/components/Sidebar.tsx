@@ -5,6 +5,7 @@ const MENU_ITEMS = [
   { name: "Dashboard", path: "/dashboard" },
   { name: "口座管理", path: "/accounts" },
   { name: "今月固定費", path: "/monthly/current" },
+  { name: "明細の要確認", path: "/imports" },
   { name: "固定費管理", path: "/fixed-costs" },
   { name: "履歴", path: "/history" },
   { name: "分析", path: "/analytics" },
