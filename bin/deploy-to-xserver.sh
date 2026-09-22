@@ -19,8 +19,11 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 # リモートのパスはホーム相対で書く（rsync/sshどちらでもそのまま通る）
 DOCROOT='animanbuzz.com/public_html/koteihi.animanbuzz.com'
-WEB_APP='animanbuzz.com/public_html/app'   # Webから参照される共有PHP
-CLI_APP='animanbuzz.com/app'               # CLI（bin/）から参照される共有PHP
+# 共有PHPは2か所に置く。どちらもWebから参照されるので、片方だけの更新は不整合になる。
+#   api/<dir>/x.php が __DIR__ 起点で require  -> public_html/app/
+#   api/x.php が素の相対パスで require        -> animanbuzz.com/app/（bin/ のCLIもこちら）
+APP_A='animanbuzz.com/public_html/app'
+APP_B='animanbuzz.com/app'
 REMOTE_BIN='animanbuzz.com/bin'
 ALLOWED_EMAIL="${1:-}"
 
@@ -66,10 +69,10 @@ tar czf ~/backups/koteihi-deploy-$TS.tar.gz -C ~/animanbuzz.com/public_html kote
 echo "  -> ~/backups/koteihi-deploy-$TS.tar.gz"'
 
 echo "▶ ディレクトリを用意"
-ssh "$REMOTE" "mkdir -p $WEB_APP $CLI_APP $REMOTE_BIN $DOCROOT/api $DOCROOT/assets"
+ssh "$REMOTE" "mkdir -p $APP_A $APP_B $REMOTE_BIN $DOCROOT/api $DOCROOT/assets"
 
-echo "▶ 共有PHPを配備（Web用・CLI用の2系統）"
-for base in "$WEB_APP" "$CLI_APP"; do
+echo "▶ 共有PHPを配備（2か所とも）"
+for base in "$APP_A" "$APP_B"; do
   for dir in bootstrap middleware services; do
     rsync -a "$ROOT/app/$dir/" "$REMOTE:$base/$dir/"
   done
@@ -105,8 +108,8 @@ fi
 echo "▶ 権限と構文チェック"
 ssh "$REMOTE" "set -e
 chmod 700 $REMOTE_BIN/import-payments.php
-find $WEB_APP $DOCROOT/api -name '*.php' -exec chmod 644 {} +
-find $WEB_APP/bootstrap $DOCROOT/api -name '*.php' -print0 | xargs -0 -n1 /usr/bin/php8.3 -l | grep -v '^No syntax errors' || echo '  PHP構文エラーなし'"
+find $APP_A $DOCROOT/api -name '*.php' -exec chmod 644 {} +
+find $APP_A/bootstrap $DOCROOT/api -name '*.php' -print0 | xargs -0 -n1 /usr/bin/php8.3 -l | grep -v '^No syntax errors' || echo '  PHP構文エラーなし'"
 
 echo ""
 echo "▶ 応答を確認"
