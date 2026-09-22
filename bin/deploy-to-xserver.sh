@@ -64,9 +64,13 @@ ssh "$REMOTE" "rm -fv $DOCROOT/api/migrate.php || true"
 
 if [ -n "$ALLOWED_EMAIL" ]; then
   echo "▶ .htaccess に許可アカウントを設定"
+  # バックアップは公開ディレクトリの外へ置く。DB_PASS を含むファイルなので、
+  # Apache の ^\.ht 拒否ルールだけに守りを預けない。
   ssh "$REMOTE" "set -e
   F=$DOCROOT/.htaccess
-  cp -p \$F \$F.bak-\$(date +%Y%m%d-%H%M%S)
+  mkdir -p ~/backups/htaccess && chmod 700 ~/backups/htaccess
+  cp -p \$F ~/backups/htaccess/.htaccess.bak-\$(date +%Y%m%d-%H%M%S)
+  chmod 600 ~/backups/htaccess/.htaccess.bak-*
   sed -i '/^SetEnv ALLOWED_GOOGLE_EMAILS /d; /^SetEnv ALLOW_REGISTRATION /d' \$F
   sed -i '0,/^SetEnv FRONTEND_ORIGIN /s//SetEnv ALLOWED_GOOGLE_EMAILS $ALLOWED_EMAIL\nSetEnv ALLOW_REGISTRATION false\n&/' \$F
   grep -c '^SetEnv ' \$F | sed 's/^/  SetEnv 行数: /'"
