@@ -1,11 +1,44 @@
+import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { fetchSettings } from "../api/settings";
+import toast from "react-hot-toast";
+import { fetchSettings, updateProfileName } from "../api/settings";
 import type { SettingsData } from "../api/settings";
 import { fetchAccounts } from "../api/accounts";
+import { useAuth } from "../context/AuthContext";
 import type { Account } from "../types";
 
 export default function Settings() {
+  const { user, setUser } = useAuth();
+  const [name, setName] = useState("");
+  const [savingName, setSavingName] = useState(false);
+
+  // ログイン直後は user が未取得なので、届いたら初期値に入れる
+  useEffect(() => {
+    setName(user?.name ?? "");
+  }, [user?.name]);
+
+  const trimmedName = name.trim();
+  const nameChanged = trimmedName !== "" && trimmedName !== (user?.name ?? "");
+
+  const saveName = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!nameChanged || savingName) return;
+
+    setSavingName(true);
+    try {
+      const res = await updateProfileName(trimmedName);
+      if (res.success && res.data) {
+        setUser(user ? { ...user, name: res.data.name } : user);
+        toast.success("表示名を変更しました");
+      }
+    } catch {
+      // エラーメッセージは api/client.ts のインターセプターがトーストで出す
+    } finally {
+      setSavingName(false);
+    }
+  };
+
   const { data } = useQuery<SettingsData>({
     queryKey: ["settings"],
     queryFn: fetchSettings,
@@ -23,6 +56,33 @@ export default function Settings() {
   return (
     <div className="space-y-6 max-w-lg">
       <h1 className="text-2xl font-bold">設定</h1>
+
+      {/* 表示名 */}
+      <form onSubmit={saveName} className="bg-white rounded-xl shadow p-5 space-y-3">
+        <div className="font-semibold text-sm text-gray-700">表示名</div>
+        <p className="text-xs text-gray-500">
+          ヘッダーに表示される名前です。100文字まで。
+        </p>
+        <div className="flex gap-2">
+          <input
+            id="display-name"
+            aria-label="表示名"
+            type="text"
+            maxLength={100}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="flex-1 border rounded px-3 py-2 text-sm"
+            placeholder="表示名"
+          />
+          <button
+            type="submit"
+            disabled={!nameChanged || savingName}
+            className="px-4 py-2 rounded text-sm text-white bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+          >
+            {savingName ? "保存中..." : "保存"}
+          </button>
+        </div>
+      </form>
 
       {/* 口座サマリー */}
       <div className="bg-white rounded-xl shadow p-5 space-y-3">

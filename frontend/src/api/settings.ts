@@ -16,3 +16,9 @@ export const updateSettings = async (payload: {
 }): Promise<ApiResponse<unknown>> => {
   return apiPost<unknown>("/settings/update.php", payload);
 };
+
+export const updateProfileName = async (
+  name: string
+): Promise<ApiResponse<{ name: string }>> => {
+  return apiPost<{ name: string }>("/settings/profile.php", { name });
+};
