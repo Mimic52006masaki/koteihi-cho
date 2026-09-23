@@ -21,6 +21,8 @@ type Stats = {
   monthly_total: number;
   total_fixed_costs: number;
   last_month_total: number;
+  last_month_cycle_date: string | null;
+  has_last_month: boolean;
   remaining_budget: number;
   fixed_count: number;
   recent: { id: number; name: string; amount: number }[];
@@ -45,7 +47,9 @@ function Dashboard() {
     return <div className="p-6">Loading...</div>;
   }
 
-  const diff = stats.monthly_total - stats.last_month_total;
+  // 今月の「予定額」と先月の「実績」を比べる。
+  // 今月の実績と比べると、支払いが進むまで毎回大きなマイナスを指してしまうため。
+  const diff = stats.total_fixed_costs - stats.last_month_total;
   const unpaidTotal = stats.total_fixed_costs - stats.monthly_total;
   const linkedRemaining = stats.account_summaries.reduce((sum, s) => sum + s.remaining, 0);
   const usageRate =
@@ -180,13 +184,27 @@ function Dashboard() {
 
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
           <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">先月との差</div>
-          <div
-            className={`text-3xl font-bold tracking-tight mt-1 ${
-              diff > 0 ? "text-red-500" : "text-green-500"
-            }`}
-          >
-            {diff >= 0 ? "+" : ""}¥{diff.toLocaleString()}
-          </div>
+          {stats.has_last_month ? (
+            <>
+              <div
+                className={`text-3xl font-bold tracking-tight mt-1 ${
+                  diff > 0 ? "text-red-500" : diff < 0 ? "text-green-500" : "text-gray-500"
+                }`}
+              >
+                {diff > 0 ? "+" : ""}¥{diff.toLocaleString()}
+              </div>
+              <div className="text-xs text-gray-400 mt-1">
+                今月の予定 ¥{stats.total_fixed_costs.toLocaleString()} − 先月の実績 ¥
+                {stats.last_month_total.toLocaleString()}
+                {stats.last_month_cycle_date ? `（${stats.last_month_cycle_date} 開始）` : ""}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-3xl font-bold tracking-tight mt-1 text-gray-300">—</div>
+              <div className="text-xs text-gray-400 mt-1">締め済みの月がまだありません</div>
+            </>
+          )}
         </div>
       </div>
 

@@ -46,6 +46,7 @@ $stmt = $pdo->prepare("
     WHERE mc.user_id = ?
     AND mc.status = 'open'
     AND fc.type != 'deposit'
+    AND p.status = 'paid'
 ");
 $stmt->execute([$userId]);
 $cycle = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -68,21 +69,41 @@ $fixedRow = $stmt->fetch(PDO::FETCH_ASSOC);
 $total_fixed_costs = (int)($fixedRow['total_fixed_costs'] ?? 0);
 
 // ----------------------------
-// 先月の固定費合計
+// 先月（直近の締め済みサイクル）の固定費実績
+//
+// 以前はここが GROUP BY 無しの SUM だったため、締め済みサイクルを全て1行に畳み込んでいた。
+// 後ろの ORDER BY ... LIMIT 1 は1行しかない結果を切るだけで効いておらず、
+// 「先月」ではなく「締め済み全期間の累計」を返していた。
+// 対象サイクルを先に1件へ絞り、今月側と同じく取消（status!='paid'）と入金を除く。
 // ----------------------------
 $stmt = $pdo->prepare("
-    SELECT COALESCE(SUM(p.amount), 0) AS last_month_total
-    FROM payments p
-    JOIN monthly_fixed_costs mf ON mf.id = p.monthly_fixed_cost_id
-    JOIN monthly_cycles mc ON mc.id = mf.monthly_cycle_id
-    WHERE mc.user_id = ?
-    AND mc.status = 'closed'
-    ORDER BY mc.id DESC
+    SELECT id, cycle_date
+    FROM monthly_cycles
+    WHERE user_id = ? AND status = 'closed'
+    ORDER BY cycle_date DESC, id DESC
     LIMIT 1
 ");
 $stmt->execute([$userId]);
-$lastMonth = $stmt->fetch(PDO::FETCH_ASSOC);
-$last_month_total = (int)($lastMonth['last_month_total'] ?? 0);
+$last_cycle = $stmt->fetch(PDO::FETCH_ASSOC);
+
+$last_month_total = 0;
+$last_month_cycle_date = null;
+
+if ($last_cycle) {
+    $last_month_cycle_date = $last_cycle['cycle_date'];
+
+    $stmt = $pdo->prepare("
+        SELECT COALESCE(SUM(p.amount), 0) AS last_month_total
+        FROM payments p
+        JOIN monthly_fixed_costs mf ON mf.id = p.monthly_fixed_cost_id
+        JOIN fixed_costs fc ON fc.id = mf.fixed_cost_id
+        WHERE mf.monthly_cycle_id = ?
+        AND p.status = 'paid'
+        AND fc.type != 'deposit'
+    ");
+    $stmt->execute([$last_cycle['id']]);
+    $last_month_total = (int)$stmt->fetchColumn();
+}
 
 // ----------------------------
 // 残り予算
@@ -116,7 +137,7 @@ $stmt = $pdo->prepare("
     LEFT JOIN monthly_fixed_costs mf ON mf.fixed_cost_id = fc.id
     LEFT JOIN monthly_cycles mc ON mc.id = mf.monthly_cycle_id
         AND mc.user_id = ? AND mc.status = 'open'
-    LEFT JOIN payments p ON p.monthly_fixed_cost_id = mf.id
+    LEFT JOIN payments p ON p.monthly_fixed_cost_id = mf.id AND p.status = 'paid'
     WHERE a.user_id = ?
     GROUP BY a.id, a.name, a.balance
     ORDER BY a.name
@@ -162,6 +183,8 @@ echo json_encode([
         "monthly_total" => $monthly_total,
         "total_fixed_costs" => $total_fixed_costs,
         "last_month_total" => $last_month_total,
+        "last_month_cycle_date" => $last_month_cycle_date,
+        "has_last_month" => $last_cycle ? true : false,
         "remaining_budget" => $remaining_budget,
         "fixed_count" => (int)$count,
         "recent" => $recent,
