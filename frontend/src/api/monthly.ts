@@ -21,6 +21,7 @@ export type MonthlyHistoryDetail = {
   items: {
     id: number;
     name: string;
+    type: "payment" | "deposit" | "transfer";
     amount: number;
     actual_amount: number | null;
   }[];

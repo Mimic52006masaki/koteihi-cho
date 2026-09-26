@@ -40,29 +40,37 @@ try {
     }
 
     // ②明細取得
+    // 支払いは項目ごとに先に集計する（取消→再支払いで行が増えても明細が重複しないように）
     $stmt = $pdo->prepare("
         SELECT
             mf.id,
             fc.name,
+            fc.type,
             mf.amount,
-            p.amount AS actual_amount
+            p.paid_amount AS actual_amount
         FROM monthly_fixed_costs mf
         JOIN fixed_costs fc
             ON fc.id = mf.fixed_cost_id
-        LEFT JOIN payments p
-            ON p.monthly_fixed_cost_id = mf.id
-            AND p.status = 'paid'
+        LEFT JOIN (
+            SELECT monthly_fixed_cost_id, SUM(amount) AS paid_amount
+            FROM payments
+            WHERE status = 'paid'
+            GROUP BY monthly_fixed_cost_id
+        ) p ON p.monthly_fixed_cost_id = mf.id
         WHERE mf.monthly_cycle_id = ?
         ORDER BY mf.id ASC
     ");
     $stmt->execute([$cycle_id]);
     $items = $stmt->fetchAll();
 
-    // ③合計計算
+    // ③合計計算（入金は支出ではないので含めない）
     $total_planned = 0;
     $total_actual = 0;
 
     foreach ($items as $item) {
+        if ($item['type'] === 'deposit') {
+            continue;
+        }
         $total_planned += (int)$item['amount'];
         $total_actual += (int)($item['actual_amount'] ?? 0);
     }

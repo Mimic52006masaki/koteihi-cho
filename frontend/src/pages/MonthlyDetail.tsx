@@ -13,8 +13,10 @@ export default function MonthlyDetail() {
   });
 
   const items = data?.items ?? [];
-  const totalPlanned = items.reduce((sum, i) => sum + Number(i.amount), 0);
-  const totalActual = items.reduce((sum, i) => sum + Number(i.actual_amount ?? 0), 0);
+  // 入金（給料など）は一覧には出すが、支出の合計には入れない
+  const expenses = items.filter((i) => i.type !== "deposit");
+  const totalPlanned = expenses.reduce((sum, i) => sum + Number(i.amount), 0);
+  const totalActual = expenses.reduce((sum, i) => sum + Number(i.actual_amount ?? 0), 0);
   const diff = totalActual - totalPlanned;
 
   if (isLoading) return <div>Loading...</div>;
@@ -37,9 +39,17 @@ export default function MonthlyDetail() {
             {items.map((item) => {
               const actual = Number(item.actual_amount ?? 0);
               const isZeroDiff = actual === Number(item.amount);
+              const isDeposit = item.type === "deposit";
               return (
                 <tr key={item.id} className={`border-t ${isZeroDiff ? "text-gray-400" : ""}`}>
-                  <td className="p-4">{item.name}</td>
+                  <td className="p-4">
+                    {item.name}
+                    {isDeposit && (
+                      <span className="ml-2 text-xs text-blue-600 bg-blue-50 rounded px-1.5 py-0.5">
+                        入金・合計外
+                      </span>
+                    )}
+                  </td>
                   <td className="p-4">¥{Number(item.amount).toLocaleString()}</td>
                   <td className="p-4">¥{actual.toLocaleString()}</td>
                 </tr>
