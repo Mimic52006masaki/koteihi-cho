@@ -128,15 +128,18 @@ $count = $stmt->fetchColumn();
 // 固定費が1件も紐づいていない口座も出すため、固定費側はすべて LEFT JOIN にする。
 // 未払いは開いている月の分だけを数える。mf を mc と内部結合してから外部結合しないと、
 // 締め済みの月に払わなかった固定費までずっと未払いに加算される。
+// is_active では絞らない。今月の行があるかどうかが正で、今月の明細画面と同じ基準にする。
+// 金額は実績が入っていれば実績を使う（カード請求の確定額などを払う前に反映させる）。
 $stmt = $pdo->prepare("
     SELECT
         a.id AS account_id,
         a.name AS account_name,
         a.balance,
-        COALESCE(SUM(CASE WHEN p.id IS NULL AND fc.type != 'deposit' THEN mf.amount ELSE 0 END), 0) AS unpaid_total
+        COALESCE(SUM(CASE WHEN p.id IS NULL AND fc.type != 'deposit'
+            THEN COALESCE(mf.actual_amount, mf.amount) ELSE 0 END), 0) AS unpaid_total
     FROM accounts a
     LEFT JOIN fixed_costs fc ON fc.default_account_id = a.id
-        AND fc.user_id = ? AND fc.is_active = 1
+        AND fc.user_id = ?
     LEFT JOIN (
         monthly_fixed_costs mf
         JOIN monthly_cycles mc ON mc.id = mf.monthly_cycle_id
