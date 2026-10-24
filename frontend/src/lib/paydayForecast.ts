@@ -23,10 +23,11 @@ export function buildForecastLines(
         : cost.default_account_id === null ? "unassigned" : "other";
     let note: string | undefined;
 
-    // 2026-10-25確認の口座振替実績。固定費マスタは本人確認まで変更しない。
-    if (cost.type === "payment" && (cost.name === "KDDI" || cost.name.startsWith("ダンス教室"))) {
+    // 2026-10-25確認の口座振替実績。旧データの登録口座が異なる場合だけ試算上で補正する。
+    if (cost.type === "payment" && source !== "sbi" &&
+      (cost.name === "KDDI" || cost.name.startsWith("ダンス教室"))) {
       source = "sbi";
-      note = "4期分の家計簿CSVでSBI引落を確認。登録口座は未修正";
+      note = "4期分の家計簿CSVでSBI引落を確認。登録口座との差を試算上で補正";
     }
 
     return {
