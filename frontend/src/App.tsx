@@ -13,6 +13,7 @@ import AccountHistory from "./pages/AccountHistory";
 import TransferPlan from "./components/TransferPlan";
 import Analytics from "./pages/Analytics";
 import ImportReview from "./pages/ImportReview";
+import PaydayForecast from "./pages/PaydayForecast";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -43,6 +44,7 @@ function App() {
             <Route path="/monthly/current" element={<CurrentMonthly />} />
             <Route path="/monthly/:id" element={<MonthlyDetail />} />
             <Route path="/transfer" element={<TransferPlan />} />
+            <Route path="/payday-forecast" element={<PaydayForecast />} />
             <Route path="/accounts/:id/history" element={<AccountHistory />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/imports" element={<ImportReview />} />

@@ -3,7 +3,11 @@ import type { Account, ApiResponse } from "../types";
 
 export const fetchAccounts = async (): Promise<Account[]> => {
   const res = await apiGet<Account[]>("/accounts/index.php");
-  return res.data;
+  return res.data.map((account) => ({
+    ...account,
+    id: Number(account.id),
+    balance: Number(account.balance),
+  }));
 };
 
 export const createAccount = async (payload: Omit<Account, "id">): Promise<ApiResponse<unknown>> => {

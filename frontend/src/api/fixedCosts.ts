@@ -5,10 +5,12 @@ export const fetchFixedCosts = async (): Promise<FixedCost[]> => {
   const res = await apiGet<FixedCost[]>("/fixed-costs/index.php");
   return res.data.map((c: FixedCost) => ({
     ...c,
+    id: Number(c.id),
     default_amount: Number(c.default_amount),
-    is_active: Boolean(c.is_active),
+    is_active: Number(c.is_active) === 1,
     type: c.type ?? "payment",
-    to_account_id: c.to_account_id ?? null,
+    default_account_id: c.default_account_id === null ? null : Number(c.default_account_id),
+    to_account_id: c.to_account_id === null ? null : Number(c.to_account_id),
   }));
 };
 

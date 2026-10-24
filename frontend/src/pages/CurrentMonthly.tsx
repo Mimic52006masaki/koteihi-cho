@@ -83,7 +83,8 @@ function TransferSimulator({
   const toggleCost = (id: number) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
@@ -877,7 +878,7 @@ export default function CurrentMonthly() {
                   <div className="text-sm text-gray-500 truncate">
                     {s.account_name}
                     {s.type === "transfer" && s.to_account_name ? ` → ${s.to_account_name}` : ""}
-                    　{s.transaction_date}
+                    {"　"}{s.transaction_date}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
