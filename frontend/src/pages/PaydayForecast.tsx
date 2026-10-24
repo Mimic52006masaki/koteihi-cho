@@ -2,27 +2,20 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAccounts } from "../api/accounts";
 import { fetchFixedCosts } from "../api/fixedCosts";
-import { apiGet } from "../api/client";
+import { fetchCurrentMonthly } from "../api/monthly";
 import AmountInput from "../components/AmountInput";
 import { buildForecastLines, calculatePaydayForecast } from "../lib/paydayForecast";
 import type { ForecastLine, FundingSource } from "../lib/paydayForecast";
 import { coverageFromFilename, matchReceipts, parseMoneyForwardCsv, plannedAuPayAmount } from "../lib/receiptMatching";
 import type { ReceiptMatch } from "../lib/receiptMatching";
 
-type PaydayStatus = { salary: number; cycle_date: string; salary_received: boolean };
 const yen = (amount: number) => `¥${amount.toLocaleString()}`;
 const statusLabels = { id: "iD", famima: "ファミマT", aupay_or_cash: "auPayか現金", unconfirmed: "未確認" };
 
 export default function PaydayForecast() {
   const { data: accounts, isLoading: accountsLoading } = useQuery({ queryKey: ["accounts"], queryFn: fetchAccounts });
   const { data: costs, isLoading: costsLoading } = useQuery({ queryKey: ["fixed-costs"], queryFn: fetchFixedCosts });
-  const { data: payday } = useQuery({
-    queryKey: ["payday-status"],
-    queryFn: async () => {
-      const response = await apiGet<PaydayStatus>("/monthly/payday-status.php");
-      return response.success ? response.data : null;
-    },
-  });
+  const { data: monthly } = useQuery({ queryKey: ["current-monthly"], queryFn: fetchCurrentMonthly });
   const [salaryOverride, setSalaryOverride] = useState<number | null>(null);
   const [rokinBuffer, setRokinBuffer] = useState(20000);
   const [rokinMinimum, setRokinMinimum] = useState(320000);
@@ -33,7 +26,8 @@ export default function PaydayForecast() {
   const [receiptFinal, setReceiptFinal] = useState(false);
 
   const salaryMaster = costs?.find((cost) => cost.is_active && cost.type === "deposit" && cost.name === "給与");
-  const salary = salaryOverride ?? (payday?.salary && payday.salary > 0 ? payday.salary : salaryMaster?.default_amount ?? 0);
+  const salaryPayment = monthly?.items.find((item) => item.type === "deposit" && item.name === "給与" && item.paid_amount !== null);
+  const salary = salaryOverride ?? (salaryPayment ? Number(salaryPayment.paid_amount) : salaryMaster?.default_amount ?? 0);
 
   const rokin = accounts?.find((account) => account.name === "東北労働金庫");
   const sbi = accounts?.find((account) => account.name.includes("ＳＭＴＢ") && !account.name.includes("ハイブリッド"));
@@ -105,7 +99,7 @@ export default function PaydayForecast() {
             <AmountInput value={rokinMinimum} onChange={(value) => setRokinMinimum(Math.max(0, value))} className="block w-full border rounded p-2" />
           </label>
         </div>
-        <p className="text-xs text-gray-500">給料は進行中の月次の記録（なければ固定費マスタの予定額）を初期値にします。予備額2万円は過去の残額2〜4万円、下限32万円は現在の運用に基づく初期値です。必要に応じて変更してください。</p>
+        <p className="text-xs text-gray-500">給料は今月明細の給与実行額（なければ固定費マスタの予定額）を初期値にします。予備額2万円は過去の残額2〜4万円、下限32万円は現在の運用に基づく初期値です。必要に応じて変更してください。</p>
       </section>
 
       <section className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-3">
