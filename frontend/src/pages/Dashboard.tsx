@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMonthly } from "../hooks/useMonthly";
-import { apiGet } from "../api/client";
+import { apiGet, apiPost } from "../api/client";
+import { coverageFromFilename, parseMoneyForwardCsv } from "../lib/receiptMatching";
+import { weekStartInTokyo, weeklyGroceryTotal } from "../lib/weeklyGrocery";
+import type { WeeklyGroceryTotal } from "../lib/weeklyGrocery";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -29,7 +33,22 @@ type Stats = {
   account_summaries: AccountSummary[];
 };
 
+type GroceryBudget = {
+  week_start: string;
+  budget_amount: number;
+  snapshot: null | {
+    spent_amount: number;
+    remaining_amount: number;
+    unconfirmed_count: number;
+    as_of_date: string;
+  };
+};
+
 function Dashboard() {
+  const queryClient = useQueryClient();
+  const [groceryPreview, setGroceryPreview] = useState<WeeklyGroceryTotal | null>(null);
+  const [groceryError, setGroceryError] = useState("");
+  const [savingGrocery, setSavingGrocery] = useState(false);
   const [cycleDate, setCycleDate] = useState(today());
   const [closeDate, setCloseDate] = useState(today());
 
@@ -40,6 +59,52 @@ function Dashboard() {
       return res.data;
     },
   });
+  const { data: grocery } = useQuery<GroceryBudget>({
+    queryKey: ["weekly-grocery"],
+    queryFn: async () => (await apiGet<GroceryBudget>("/dashboard/weekly-grocery.php")).data,
+  });
+
+  const readGroceryCsv = async (files: FileList | null) => {
+    if (!files?.length) return;
+    try {
+      const weekStart = weekStartInTokyo();
+      const asOf = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+      const decoded = await Promise.all(Array.from(files, async (file) => ({
+        coverage: coverageFromFilename(file.name),
+        rows: parseMoneyForwardCsv(new TextDecoder("shift_jis", { fatal: true }).decode(await file.arrayBuffer())),
+      })));
+      for (let date = weekStart; date <= asOf; date = new Date(Date.parse(`${date}T00:00:00Z`) + 86400000).toISOString().slice(0, 10)) {
+        if (!decoded.some(({ coverage }) => coverage.from <= date && date <= coverage.to)) {
+          throw new Error(`今週の${date}を含むCSVも選択してください`);
+        }
+      }
+      setGroceryPreview(weeklyGroceryTotal(decoded.flatMap(({ rows }) => rows), weekStart));
+      setGroceryError("");
+    } catch (error) {
+      setGroceryPreview(null);
+      setGroceryError(error instanceof Error ? error.message : "CSVを読み込めませんでした");
+    }
+  };
+
+  const saveGrocery = async () => {
+    if (!groceryPreview || !grocery) return;
+    setSavingGrocery(true);
+    try {
+      await apiPost("/dashboard/weekly-grocery.php", {
+        week_start: grocery.week_start,
+        as_of_date: new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" }),
+        spent_amount: groceryPreview.spent,
+        unconfirmed_count: groceryPreview.unconfirmed,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["weekly-grocery"] });
+      toast.success("今週の食材予算を保存しました");
+      setGroceryPreview(null);
+    } catch {
+      toast.error("食材予算を保存できませんでした");
+    } finally {
+      setSavingGrocery(false);
+    }
+  };
 
   const { monthly: currentMonthly, generateMutation, closeMutation } = useMonthly();
 
@@ -60,6 +125,29 @@ function Dashboard() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Dashboard</h1>
+
+      <section className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-3">
+        <h2 className="font-semibold">🛒 今週のアークス</h2>
+        <p className="text-xs text-gray-500">{grocery?.week_start ?? weekStartInTokyo()}から日曜まで・予算 ¥10,000</p>
+        {grocery?.snapshot ? (
+          <>
+            <div className="text-lg">使った額 <strong>¥{grocery.snapshot.spent_amount.toLocaleString()}</strong>
+              {" / "}{grocery.snapshot.remaining_amount < 0 ? "超過" : "残り"} <strong className={grocery.snapshot.remaining_amount < 0 ? "text-red-600" : "text-green-700"}>
+                ¥{Math.abs(grocery.snapshot.remaining_amount).toLocaleString()}
+              </strong>
+            </div>
+            <p className="text-xs text-gray-500">{grocery.snapshot.as_of_date}時点の保存済み集計
+              {grocery.snapshot.unconfirmed_count > 0 && `・未確認 ${grocery.snapshot.unconfirmed_count}件（合計に含めず）`}</p>
+          </>
+        ) : <p className="text-sm text-gray-600">今週の集計はまだ保存されていません。</p>}
+        <p className="text-xs text-gray-500">家計簿CSVを選ぶと、アークスと旧店名ビッグハウスのレシートを集計します。ファミマカードの同額明細は二重に数えません。未確認分は合計から除きます。CSV自体は送信しません。</p>
+        <input type="file" accept=".csv,text/csv" multiple aria-label="今週の家計簿CSVを選択" onChange={(event) => void readGroceryCsv(event.target.files)} className="block text-sm" />
+        {groceryError && <p role="alert" className="text-red-600 text-sm">{groceryError}</p>}
+        {groceryPreview && <div className="text-sm space-y-2">
+          <p>今回の集計：¥{groceryPreview.spent.toLocaleString()}／残り ¥{(10000 - groceryPreview.spent).toLocaleString()}（レシート {groceryPreview.receipts}件、レシートなしカード {groceryPreview.cardOnly}件、未確認 {groceryPreview.unconfirmed}件）</p>
+          <button type="button" disabled={savingGrocery || !grocery} onClick={() => void saveGrocery()} className="bg-blue-600 text-white px-3 py-2 rounded disabled:opacity-50">この集計を保存</button>
+        </div>}
+      </section>
 
       {linkedRemaining < 0 && (
         <div className="bg-red-100 border border-red-300 text-red-700 p-4 rounded-lg">
