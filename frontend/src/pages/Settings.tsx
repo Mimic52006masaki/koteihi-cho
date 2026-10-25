@@ -1,10 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { fetchSettings, updateProfileName } from "../api/settings";
 import type { SettingsData } from "../api/settings";
 import { fetchAccounts } from "../api/accounts";
+import { fetchWeeklyBudget, updateWeeklyBudget } from "../api/weeklyBudget";
+import type { WeeklyBudgetSetting } from "../api/weeklyBudget";
+import { weekSchedule } from "../lib/weeklyGrocery";
 import { useAuth } from "../context/AuthContext";
 import type { Account } from "../types";
 
@@ -12,6 +15,37 @@ export default function Settings() {
   const { user, setUser } = useAuth();
   const [name, setName] = useState("");
   const [savingName, setSavingName] = useState(false);
+  const queryClient = useQueryClient();
+  const [budgetInput, setBudgetInput] = useState("");
+  const [savingBudget, setSavingBudget] = useState(false);
+
+  const { data: weeklyBudget } = useQuery<WeeklyBudgetSetting>({
+    queryKey: ["weekly-budget"],
+    queryFn: fetchWeeklyBudget,
+  });
+
+  useEffect(() => {
+    if (weeklyBudget) setBudgetInput(String(weeklyBudget.next_budget_amount));
+  }, [weeklyBudget]);
+
+  const budgetValue = Number(budgetInput);
+  const budgetValid = /^\d+$/.test(budgetInput) && budgetValue >= 1 && budgetValue <= 1000000;
+  const budgetChanged = budgetValid && budgetValue !== weeklyBudget?.next_budget_amount;
+
+  const saveBudget = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!budgetChanged || savingBudget) return;
+    setSavingBudget(true);
+    try {
+      queryClient.setQueryData(["weekly-budget"], await updateWeeklyBudget(budgetValue));
+      await queryClient.invalidateQueries({ queryKey: ["weekly-grocery"] });
+      toast.success("次の月曜からの週予算を保存しました");
+    } catch {
+      // エラーメッセージは api/client.ts のインターセプターがトーストで出す
+    } finally {
+      setSavingBudget(false);
+    }
+  };
 
   // ログイン直後は user が未取得なので、届いたら初期値に入れる
   useEffect(() => {
@@ -82,6 +116,41 @@ export default function Settings() {
             {savingName ? "保存中..." : "保存"}
           </button>
         </div>
+      </form>
+
+      {/* 週の買い物予算 */}
+      <form onSubmit={saveBudget} className="bg-white rounded-xl shadow p-5 space-y-3">
+        <div className="font-semibold text-sm text-gray-700">週の買い物予算</div>
+        {weeklyBudget && (() => {
+          const now = weekSchedule(weeklyBudget.week_start);
+          const next = weekSchedule(weeklyBudget.next_week_start);
+          return <div className="text-sm space-y-1">
+            <p>今週 {now.range}：<strong>¥{weeklyBudget.budget_amount.toLocaleString()}</strong>（変わりません）</p>
+            <p>{next.range.split("〜")[0]}から：<strong>¥{weeklyBudget.next_budget_amount.toLocaleString()}</strong></p>
+          </div>;
+        })()}
+        <p className="text-xs text-gray-500">保存した金額は次の月曜0:00から使います。今週の予算は週の途中で変えません。</p>
+        <div className="flex gap-2">
+          <input
+            aria-label="週の買い物予算"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={1000000}
+            step={1}
+            value={budgetInput}
+            onChange={(e) => setBudgetInput(e.target.value)}
+            className="flex-1 border rounded px-3 py-2 text-sm"
+          />
+          <button
+            type="submit"
+            disabled={!budgetChanged || savingBudget}
+            className="px-4 py-2 rounded text-sm text-white bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+          >
+            {savingBudget ? "保存中..." : "予算を保存"}
+          </button>
+        </div>
+        {budgetInput !== "" && !budgetValid && <p className="text-xs text-red-600">1〜1,000,000円の整数で入力してください</p>}
       </form>
 
       {/* 口座サマリー */}

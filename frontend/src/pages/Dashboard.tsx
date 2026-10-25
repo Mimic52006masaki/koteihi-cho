@@ -36,7 +36,10 @@ type Stats = {
 type GroceryBudget = {
   week_start: string;
   budget_amount: number;
+  next_week_start: string;
+  next_budget_amount: number;
   snapshot: null | {
+    budget_amount: number;
     spent_amount: number;
     remaining_amount: number;
     unconfirmed_count: number;
@@ -63,6 +66,8 @@ function Dashboard() {
     queryKey: ["weekly-grocery"],
     queryFn: async () => (await apiGet<GroceryBudget>("/dashboard/weekly-grocery.php")).data,
   });
+
+  const groceryBudget = grocery?.budget_amount ?? 10000;
 
   const readGroceryCsv = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -130,9 +135,10 @@ function Dashboard() {
         <h2 className="font-semibold">🛒 今週の買い物</h2>
         {(() => {
           const schedule = weekSchedule(grocery?.week_start ?? weekStartInTokyo());
+          const next = grocery?.next_budget_amount ?? groceryBudget;
           return <div className="text-sm text-gray-700">
-            <p>期間 <strong>{schedule.range}</strong>・予算 ¥10,000</p>
-            <p className="text-xs text-gray-500">{schedule.lastDay} 23:59までの買い物をこの予算でやりくり（今日を含めあと{schedule.daysLeft}日）。{schedule.reset} 0:00に¥10,000へリセット。</p>
+            <p>期間 <strong>{schedule.range}</strong>・予算 ¥{groceryBudget.toLocaleString()}</p>
+            <p className="text-xs text-gray-500">{schedule.lastDay} 23:59までの買い物をこの予算でやりくり（今日を含めあと{schedule.daysLeft}日）。{schedule.reset} 0:00に¥{next.toLocaleString()}へリセット{next !== groceryBudget && "（設定で変更済み）"}。</p>
           </div>;
         })()}
         {grocery?.snapshot ? (
@@ -150,7 +156,7 @@ function Dashboard() {
         <input type="file" accept=".csv,text/csv" multiple aria-label="今週の家計簿CSVを選択" onChange={(event) => void readGroceryCsv(event.target.files)} className="block text-sm" />
         {groceryError && <p role="alert" className="text-red-600 text-sm">{groceryError}</p>}
         {groceryPreview && <div className="text-sm space-y-2">
-          <p>今回の集計：¥{groceryPreview.spent.toLocaleString()}／残り ¥{(10000 - groceryPreview.spent).toLocaleString()}（レシート {groceryPreview.receipts}件、レシートなしカード {groceryPreview.cardOnly}件、未確認 {groceryPreview.unconfirmed}件）</p>
+          <p>今回の集計：¥{groceryPreview.spent.toLocaleString()}／残り ¥{(groceryBudget - groceryPreview.spent).toLocaleString()}（レシート {groceryPreview.receipts}件、レシートなしカード {groceryPreview.cardOnly}件、未確認 {groceryPreview.unconfirmed}件）</p>
           <button type="button" disabled={savingGrocery || !grocery} onClick={() => void saveGrocery()} className="bg-blue-600 text-white px-3 py-2 rounded disabled:opacity-50">この集計を保存</button>
         </div>}
       </section>

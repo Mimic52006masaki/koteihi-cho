@@ -20,4 +20,4 @@ until docker exec "$run_name" mysqladmin ping -h 127.0.0.1 -plocal-test-only --s
 done
 docker run --rm --network "$run_name" -v "$repo_dir:/work:ro" \
   -e DB_HOST="$run_name" -e DB_NAME=koteihi_test -e DB_USER=root -e DB_PASS=local-test-only \
-  koteihi-import-test php tests/imports.php
+  koteihi-import-test php "tests/${1:-imports.php}"

@@ -2,10 +2,13 @@
 require '../cors.php';
 require '../../../app/middleware/auth.php';
 
+require '../../../app/services/WeeklyBudget.php';
 $pdo = require '../../../app/config/database.php';
 $userId = (int)$_SESSION['user_id'];
 $today = new DateTimeImmutable('now', new DateTimeZone('Asia/Tokyo'));
-$weekStart = $today->modify('monday this week')->format('Y-m-d');
+$weekStart = WeeklyBudget::weekStart($today);
+$nextWeekStart = WeeklyBudget::nextWeekStart($today);
+$budget = WeeklyBudget::amountFor($pdo, $userId, $weekStart);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
@@ -29,11 +32,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $stmt = $pdo->prepare("INSERT INTO weekly_grocery_budgets
         (user_id, week_start, budget_amount, spent_amount, unconfirmed_count, as_of_date, source)
-        VALUES (?, ?, 10000, ?, ?, ?, 'moneyforward_csv')
+        VALUES (?, ?, ?, ?, ?, ?, 'moneyforward_csv')
         ON DUPLICATE KEY UPDATE spent_amount = VALUES(spent_amount),
             unconfirmed_count = VALUES(unconfirmed_count), as_of_date = VALUES(as_of_date),
             source = VALUES(source)");
-    $stmt->execute([$userId, $date, $spent, $unconfirmed, $asOf]);
+    $stmt->execute([$userId, $date, $budget, $spent, $unconfirmed, $asOf]);
 } elseif ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     http_response_code(405);
     echo json_encode(['success' => false, 'data' => null, 'error' => 'Method not allowed']);
@@ -50,4 +53,11 @@ if ($row) {
     $row['unconfirmed_count'] = (int)$row['unconfirmed_count'];
     $row['remaining_amount'] = $row['budget_amount'] - $row['spent_amount'];
 }
-echo json_encode(['success' => true, 'data' => ['week_start' => $weekStart, 'budget_amount' => 10000, 'snapshot' => $row ?: null], 'error' => null], JSON_UNESCAPED_UNICODE);
+// 保存済みの週はその行の予算を正とする（週の途中で設定を変えても今週は動かさない）
+echo json_encode(['success' => true, 'data' => [
+    'week_start' => $weekStart,
+    'budget_amount' => $row ? $row['budget_amount'] : $budget,
+    'next_week_start' => $nextWeekStart,
+    'next_budget_amount' => WeeklyBudget::amountFor($pdo, $userId, $nextWeekStart),
+    'snapshot' => $row ?: null,
+], 'error' => null], JSON_UNESCAPED_UNICODE);
