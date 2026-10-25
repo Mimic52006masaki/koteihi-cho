@@ -24,4 +24,18 @@ describe("weekly grocery budget", () => {
     });
     expect(weeklyGroceryTotal([rows[0], row("c4", "2026-10-20", "スーパーアークス 一関店", -2000, "ファミマカード")], "2026-10-19").spent).toBe(3176);
   });
+
+  it("includes convenience and drugstore receipts without counting iD raw lines twice", () => {
+    const rows = [
+      { ...row("r1", "2026-10-24", "ビッグハウス一関店", -1176, "なし"), majorCategory: "食費" },
+      { ...row("r2", "2026-10-24", "セブンイレブン一関樋渡店", -349, "なし"), majorCategory: "食費" },
+      { ...row("r3", "2026-10-22", "薬王堂 岩手金ケ崎店", -533, "なし"), majorCategory: "日用品" },
+      row("d1", "2026-10-24", "デビット 191589", -349, "ドコモＳＭＴＢネット銀行"),
+      row("d2", "2026-10-22", "デビット 764095", -533, "ドコモＳＭＴＢネット銀行"),
+      { ...row("lesson", "2026-10-24", "書道 8月〜11月分", -12500, "なし"), majorCategory: "教養・教育" },
+    ];
+    expect(weeklyGroceryTotal(rows, "2026-10-19")).toEqual({
+      spent: 2058, receipts: 3, cardOnly: 0, unconfirmed: 0,
+    });
+  });
 });

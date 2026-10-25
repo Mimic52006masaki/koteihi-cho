@@ -7,7 +7,9 @@ export type WeeklyGroceryTotal = {
   cardOnly: number;
 };
 
-const arcs = (name: string) => /(?:スーパー\s*アークス|ビッグハウス)\s*一関店/.test(name.normalize("NFKC"));
+const looksLikeStore = (name: string) => /店|スーパー|マート|薬王堂|Amazon|楽天市場/i.test(name.normalize("NFKC"));
+const isShopping = (row: Statement) =>
+  row.majorCategory === "食費" || row.majorCategory === "日用品" || looksLikeStore(row.description);
 const day = (date: string) => Date.parse(`${date}T00:00:00Z`) / 86400000;
 
 export function weekStartInTokyo(now = new Date()): string {
@@ -26,7 +28,8 @@ export function weeklyGroceryTotal(rows: Statement[], weekStart: string): Weekly
     unique.set(row.id, row);
   }
   const purchases = [...unique.values()].filter((row) =>
-    row.date >= weekStart && day(row.date) < day(weekStart) + 7 && row.amount < 0 && !row.transfer && arcs(row.description));
+    row.date >= weekStart && day(row.date) < day(weekStart) + 7 && row.amount < 0 && !row.transfer &&
+    isShopping(row));
   const receipts = purchases.filter((row) => row.account === "なし");
   const cards = purchases.filter((row) => row.account === "ファミマカード");
   let spent = receipts.reduce((sum, row) => sum - row.amount, 0);

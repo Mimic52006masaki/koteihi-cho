@@ -4,6 +4,7 @@ export type Statement = {
   description: string;
   amount: number;
   account: string;
+  majorCategory?: string;
   transfer: boolean;
 };
 
@@ -11,7 +12,7 @@ export type Coverage = { from: string; to: string };
 export type ReceiptStatus = "id" | "famima" | "aupay_or_cash" | "unconfirmed";
 export type ReceiptMatch = { receipt: Statement; status: ReceiptStatus; reason: string };
 
-const requiredHeaders = ["日付", "内容", "金額（円）", "保有金融機関", "振替", "ID"];
+const requiredHeaders = ["日付", "内容", "金額（円）", "保有金融機関", "大項目", "振替", "ID"];
 
 function csvRows(input: string): string[][] {
   const rows: string[][] = [];
@@ -66,6 +67,7 @@ export function parseMoneyForwardCsv(input: string): Statement[] {
       description: cells[index("内容")] ?? "",
       amount: Number(rawAmount),
       account: cells[index("保有金融機関")] ?? "",
+      majorCategory: cells[index("大項目")] ?? "",
       transfer: cells[index("振替")] === "1",
     };
   });

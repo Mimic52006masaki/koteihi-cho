@@ -127,7 +127,7 @@ function Dashboard() {
       <h1 className="text-2xl font-bold">Dashboard</h1>
 
       <section className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-3">
-        <h2 className="font-semibold">🛒 今週のアークス</h2>
+        <h2 className="font-semibold">🛒 今週の買い物</h2>
         <p className="text-xs text-gray-500">{grocery?.week_start ?? weekStartInTokyo()}から日曜まで・予算 ¥10,000</p>
         {grocery?.snapshot ? (
           <>
@@ -140,7 +140,7 @@ function Dashboard() {
               {grocery.snapshot.unconfirmed_count > 0 && `・未確認 ${grocery.snapshot.unconfirmed_count}件（合計に含めず）`}</p>
           </>
         ) : <p className="text-sm text-gray-600">今週の集計はまだ保存されていません。</p>}
-        <p className="text-xs text-gray-500">今週の月曜から今日までを含む家計簿CSVを選んでください。期間がまたがる場合は前期分も一緒に選びます。アークスと旧店名ビッグハウスのレシートを集計し、ファミマカードの同額明細は二重に数えません。未確認分は合計から除きます。CSV自体は送信しません。</p>
+        <p className="text-xs text-gray-500">店や食費・日用品の分類を問わず、買い物の手入力レシートを数えます。iDで払ったレシートも含み、SBIデビットの生明細は二重に数えません。判定できない明細は保留します。CSVで手動更新する場合は、今週の月曜から今日までを含む期間を選んでください。期間がまたがる場合は前期分も一緒に選びます。CSV自体は送信しません。</p>
         <input type="file" accept=".csv,text/csv" multiple aria-label="今週の家計簿CSVを選択" onChange={(event) => void readGroceryCsv(event.target.files)} className="block text-sm" />
         {groceryError && <p role="alert" className="text-red-600 text-sm">{groceryError}</p>}
         {groceryPreview && <div className="text-sm space-y-2">
