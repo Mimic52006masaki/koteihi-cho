@@ -140,7 +140,7 @@ function Dashboard() {
               {grocery.snapshot.unconfirmed_count > 0 && `・未確認 ${grocery.snapshot.unconfirmed_count}件（合計に含めず）`}</p>
           </>
         ) : <p className="text-sm text-gray-600">今週の集計はまだ保存されていません。</p>}
-        <p className="text-xs text-gray-500">家計簿CSVを選ぶと、アークスと旧店名ビッグハウスのレシートを集計します。ファミマカードの同額明細は二重に数えません。未確認分は合計から除きます。CSV自体は送信しません。</p>
+        <p className="text-xs text-gray-500">今週の月曜から今日までを含む家計簿CSVを選んでください。期間がまたがる場合は前期分も一緒に選びます。アークスと旧店名ビッグハウスのレシートを集計し、ファミマカードの同額明細は二重に数えません。未確認分は合計から除きます。CSV自体は送信しません。</p>
         <input type="file" accept=".csv,text/csv" multiple aria-label="今週の家計簿CSVを選択" onChange={(event) => void readGroceryCsv(event.target.files)} className="block text-sm" />
         {groceryError && <p role="alert" className="text-red-600 text-sm">{groceryError}</p>}
         {groceryPreview && <div className="text-sm space-y-2">

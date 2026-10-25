@@ -72,7 +72,7 @@ export function parseMoneyForwardCsv(input: string): Statement[] {
 }
 
 export function coverageFromFilename(name: string): Coverage {
-  const match = name.match(/収入・支出詳細_(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})\.csv$/);
+  const match = name.match(/^収入・支出詳細_(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})(?: \(\d+\))?\.csv$/);
   if (!match) throw new Error(`期間をファイル名から確認できません: ${name}`);
   epochDay(match[1]); epochDay(match[2]);
   return { from: match[1], to: match[2] };

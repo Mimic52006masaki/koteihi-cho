@@ -16,6 +16,8 @@ describe("家計簿CSVのレシート照合", () => {
     });
     expect(coverageFromFilename("収入・支出詳細_2026-10-20_2026-11-19.csv"))
       .toEqual({ from: "2026-10-20", to: "2026-11-19" });
+    expect(coverageFromFilename("収入・支出詳細_2026-10-20_2026-11-19 (1).csv"))
+      .toEqual({ from: "2026-10-20", to: "2026-11-19" });
   });
 
   it("一意のSBIデビットとファミマカードを区別し、候補なしはauPayか現金にする", () => {
