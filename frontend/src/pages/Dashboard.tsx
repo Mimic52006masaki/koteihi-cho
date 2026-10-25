@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useMonthly } from "../hooks/useMonthly";
 import { apiGet, apiPost } from "../api/client";
 import { coverageFromFilename, parseMoneyForwardCsv } from "../lib/receiptMatching";
-import { weekStartInTokyo, weeklyGroceryTotal } from "../lib/weeklyGrocery";
+import { weekSchedule, weekStartInTokyo, weeklyGroceryTotal } from "../lib/weeklyGrocery";
 import type { WeeklyGroceryTotal } from "../lib/weeklyGrocery";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -128,7 +128,13 @@ function Dashboard() {
 
       <section className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-3">
         <h2 className="font-semibold">🛒 今週の買い物</h2>
-        <p className="text-xs text-gray-500">{grocery?.week_start ?? weekStartInTokyo()}から日曜まで・予算 ¥10,000</p>
+        {(() => {
+          const schedule = weekSchedule(grocery?.week_start ?? weekStartInTokyo());
+          return <div className="text-sm text-gray-700">
+            <p>期間 <strong>{schedule.range}</strong>・予算 ¥10,000</p>
+            <p className="text-xs text-gray-500">{schedule.lastDay} 23:59までの買い物をこの予算でやりくり（今日を含めあと{schedule.daysLeft}日）。{schedule.reset} 0:00に¥10,000へリセット。</p>
+          </div>;
+        })()}
         {grocery?.snapshot ? (
           <>
             <div className="text-lg">使った額 <strong>¥{grocery.snapshot.spent_amount.toLocaleString()}</strong>

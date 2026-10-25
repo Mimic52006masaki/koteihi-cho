@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { weeklyGroceryTotal, weekStartInTokyo } from "../lib/weeklyGrocery";
+import { weekSchedule, weeklyGroceryTotal, weekStartInTokyo } from "../lib/weeklyGrocery";
 import type { Statement } from "../lib/receiptMatching";
 
 const row = (id: string, date: string, description: string, amount: number, account: string): Statement =>
@@ -8,6 +8,13 @@ const row = (id: string, date: string, description: string, amount: number, acco
 describe("weekly grocery budget", () => {
   it("uses Monday in Tokyo", () => {
     expect(weekStartInTokyo(new Date("2026-10-25T12:00:00Z"))).toBe("2026-10-19");
+  });
+
+  it("labels the week range, last day and reset day with weekdays", () => {
+    expect(weekSchedule("2026-10-19", new Date("2026-10-25T12:00:00Z"))).toEqual({
+      range: "10/19（月）〜10/25（日）", lastDay: "10/25（日）", reset: "10/26（月）", daysLeft: 1,
+    });
+    expect(weekSchedule("2026-10-26", new Date("2026-10-25T15:30:00Z")).daysLeft).toBe(7);
   });
 
   it("counts receipts once, card-only purchases, and holds mismatches", () => {

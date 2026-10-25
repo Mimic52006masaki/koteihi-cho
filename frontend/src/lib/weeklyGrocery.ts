@@ -47,3 +47,24 @@ export function weeklyGroceryTotal(rows: Statement[], weekStart: string): Weekly
   }
   return { spent, unconfirmed, receipts: receipts.length, cardOnly };
 }
+
+const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
+const shift = (date: string, days: number) => {
+  const value = new Date(`${date}T00:00:00Z`);
+  value.setUTCDate(value.getUTCDate() + days);
+  return value;
+};
+const label = (value: Date) => `${value.getUTCMonth() + 1}/${value.getUTCDate()}（${WEEKDAYS[value.getUTCDay()]}）`;
+
+export type WeekSchedule = { range: string; lastDay: string; reset: string; daysLeft: number };
+
+export function weekSchedule(weekStart: string, now = new Date()): WeekSchedule {
+  const today = now.toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+  const daysLeft = Math.max(0, Math.min(7, day(weekStart) + 7 - day(today)));
+  return {
+    range: `${label(shift(weekStart, 0))}〜${label(shift(weekStart, 6))}`,
+    lastDay: label(shift(weekStart, 6)),
+    reset: label(shift(weekStart, 7)),
+    daysLeft,
+  };
+}
